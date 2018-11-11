@@ -38,4 +38,5 @@ const (
 	RBRACE    = "RBRACE"
 	SEMICOLON = "SEMICOLON"
 	INT_LIT   = "INT_LIT"
+	INT_TYPE  = "INT_TYPE"
 )
