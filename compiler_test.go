@@ -39,17 +39,16 @@ func (tt *OutputTest) Run(t *testing.T) {
 	assert.NilError(t, err)
 	// assembly & link with gcc
 	dir := fs.NewDir(t, "cc", fs.WithFile("out.s", code))
-	defer dir.Remove()
-	gcc := exec.Command("gcc", "-m32", "out.s", "-o", "out")
+	// defer dir.Remove()
+	gcc := exec.Command("gcc", "-m32", "out.s", "-o", "out.exe")
 	gcc.Dir = dir.Path()
+	t.Log(dir.Path())
 	// check the output
 	output, err := gcc.CombinedOutput()
-	assert.NilError(t, err, string(output))
+	assert.NilError(t, err, "gcc: %s", string(output))
 	// run the binary
-	bin := exec.Command("out")
-	bin.Dir = dir.Path()
+	bin := exec.Command(dir.Join("out.exe"))
 	output, err = bin.CombinedOutput()
-	assert.NilError(t, err, string(output))
 	// check the output
 	assert.Equal(t, ExitCode(bin, err), tt.ExitCode)
 	assert.Equal(t, string(output), tt.Ouput)
