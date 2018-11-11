@@ -93,7 +93,7 @@ type Function struct {
 
 func (f *Function) stmtNode()          {}
 func (f *Function) Token() token.Token { return f.Tok }
-func (f *Function) String() string     { return fmt.Sprintf("%s() { %s }", f.Name, f.Body) }
+func (f *Function) String() string     { return fmt.Sprintf("int %s() { %s }", f.Name, f.Body) }
 
 type Return struct {
 	Tok   token.Token
@@ -102,4 +102,4 @@ type Return struct {
 
 func (r *Return) stmtNode()          {}
 func (r *Return) Token() token.Token { return r.Tok }
-func (r *Return) String() string     { return fmt.Sprintf("return %s", r.Value) }
+func (r *Return) String() string     { return fmt.Sprintf("return %s;", r.Value) }
