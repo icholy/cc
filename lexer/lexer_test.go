@@ -36,10 +36,14 @@ func TestLexer(t *testing.T) {
 			src, err := ioutil.ReadFile(tt.SrcPath)
 			assert.NilError(t, err)
 			l := New(string(src))
+			var actual []token.Token
 			for i, e := range tt.Expected {
 				tok := l.Lex()
 				tok.Pos = token.Pos{}
+				actual = append(actual, tok)
 				if tok != e {
+					t.Logf("got:  %v", actual)
+					t.Logf("want: %v", tt.Expected)
 					t.Fatalf("test[%d] - wrong token. want=%s, got=%s", i, e, tok)
 				}
 			}

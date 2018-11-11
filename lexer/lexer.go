@@ -36,6 +36,7 @@ func (l *Lexer) unread() {
 func (l *Lexer) read() byte {
 	// make sure there's more
 	if l.next >= len(l.input) {
+		l.ch = 0
 		return 0
 	}
 	// update the current character
@@ -58,22 +59,31 @@ func (l *Lexer) newTok(typ token.TokenType, text string) token.Token {
 	}
 }
 
+func (l *Lexer) newByteTok(typ token.TokenType) token.Token {
+	return l.newTok(typ, string([]byte{l.ch}))
+}
+
 var bytetokens = map[byte]token.TokenType{
 	'{': token.LBRACE,
 	'}': token.RBRACE,
 	'(': token.LPAREN,
 	')': token.RPAREN,
 	';': token.SEMICOLON,
-	0:   token.EOF,
 }
 
 func (l *Lexer) Lex() token.Token {
 	// find the next non-white token
-	ch := l.readNonWhite()
+	l.read()
+	l.whitespace()
+
+	// check for end of file
+	if l.ch == 0 {
+		return l.newTok(token.EOF, "")
+	}
 
 	// single byte tokens
-	if typ, ok := bytetokens[ch]; ok {
-		return l.newTok(typ, string([]byte{ch}))
+	if typ, ok := bytetokens[l.ch]; ok {
+		return l.newByteTok(typ)
 	}
 
 	// more complex tokens
@@ -83,7 +93,7 @@ func (l *Lexer) Lex() token.Token {
 	case l.isAlpha():
 		return l.lexIdent()
 	default:
-		return l.newTok(token.ILLEGAL, string([]byte{ch}))
+		return l.newByteTok(token.ILLEGAL)
 	}
 }
 
@@ -119,11 +129,10 @@ func (l *Lexer) lexIdent() token.Token {
 	return l.newTok(token.IDENT, text.String())
 }
 
-func (l *Lexer) readNonWhite() byte {
+func (l *Lexer) whitespace() {
 	for l.isWhite() {
 		l.read()
 	}
-	return l.ch
 }
 
 func (l *Lexer) isDigit() bool {
@@ -140,5 +149,5 @@ func (l *Lexer) isWhite() bool {
 }
 
 func (l *Lexer) isAlpha() bool {
-	return ('a' <= l.ch && l.ch <= 'z') || ('A' <= l.ch || l.ch <= 'Z') || l.ch == '_'
+	return ('a' <= l.ch && l.ch <= 'z') || ('A' <= l.ch && l.ch <= 'Z') || l.ch == '_'
 }
