@@ -1,8 +1,11 @@
 package compiler
 
 import (
+	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 	"testing"
 
@@ -11,49 +14,82 @@ import (
 )
 
 func TestOutput(t *testing.T) {
-	tests := []OutputTest{
+	tests := []struct {
+		Name     string
+		SrcPath  string
+		Ouput    string
+		ExitCode int
+	}{
 		{
 			Name:     "return_2",
-			SrcPath:  "stage_1/return_2.c",
+			SrcPath:  "stage_1/valid/return_2.c",
 			ExitCode: 2,
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.Name, tt.Run)
+		t.Run(tt.Name, func(t *testing.T) {
+			dir := fs.NewDir(t, tt.Name)
+			defer dir.Remove()
+			assertCompile(t, dir, tt.SrcPath, true)
+			output, exitcode := assertRun(t, dir)
+			assert.Equal(t, exitcode, tt.ExitCode)
+			assert.Equal(t, output, tt.Ouput)
+		})
 	}
 }
 
-type OutputTest struct {
-	Name     string
-	SrcPath  string
-	Ouput    string
-	ExitCode int
+func TestStages(t *testing.T) {
+	AssertValid(t, 1)
 }
 
-func (tt *OutputTest) Run(t *testing.T) {
-	// read the source file
-	src, err := ioutil.ReadFile(tt.SrcPath)
+func AssertValid(t *testing.T, stage int) {
+	t.Run(fmt.Sprintf("stage_%d", stage), func(t *testing.T) {
+		pattern := fmt.Sprintf("stage_%d/valid/*.c", stage)
+		valid, err := filepath.Glob(pattern)
+		assert.NilError(t, err)
+		for _, srcpath := range valid {
+			t.Run(filepath.Base(srcpath), func(t *testing.T) {
+				dir := fs.NewDir(t, "cc")
+				defer dir.Remove()
+				assertCompile(t, dir, srcpath, true)
+			})
+		}
+	})
+}
+
+const binName = "out.exe"
+
+func assertRun(t *testing.T, dir *fs.Dir) (string, int) {
+	bin := exec.Command(dir.Join(binName))
+	output, err := bin.CombinedOutput()
+	return string(output), exitCode(bin, err)
+}
+
+func assertCompile(t *testing.T, dir *fs.Dir, srcpath string, valid bool) {
+	src, err := ioutil.ReadFile(srcpath)
 	assert.NilError(t, err)
 	// compile to assembly
-	code, err := Compile(string(src))
+	asm, err := Compile(string(src))
 	assert.NilError(t, err)
-	// assembly & link with gcc
-	dir := fs.NewDir(t, "cc", fs.WithFile("out.s", code))
-	defer dir.Remove()
-	gcc := exec.Command("gcc", "-m32", "out.s", "-o", "out.exe")
+	assertWriteFile(t, dir, "out.s", asm)
+	gcc := exec.Command("gcc", "-m32", "out.s", "-o", binName)
 	gcc.Dir = dir.Path()
 	// check the output
 	output, err := gcc.CombinedOutput()
-	assert.NilError(t, err, "gcc: %s", string(output))
-	// run the binary
-	bin := exec.Command(dir.Join("out.exe"))
-	output, err = bin.CombinedOutput()
-	// check the output
-	assert.Equal(t, ExitCode(bin, err), tt.ExitCode)
-	assert.Equal(t, string(output), tt.Ouput)
+	if valid {
+		assert.NilError(t, err, string(output))
+	} else {
+		assert.Error(t, err, string(output))
+	}
 }
 
-func ExitCode(cmd *exec.Cmd, err error) int {
+func assertWriteFile(t *testing.T, dir *fs.Dir, name, content string) {
+	t.Helper()
+	err := ioutil.WriteFile(dir.Join(name), []byte(content), os.ModePerm)
+	assert.NilError(t, err)
+}
+
+func exitCode(cmd *exec.Cmd, err error) int {
 	if err != nil {
 		// try to get the exit code
 		if exitError, ok := err.(*exec.ExitError); ok {
