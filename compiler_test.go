@@ -22,7 +22,7 @@ func TestOutput(t *testing.T) {
 	}{
 		{
 			Name:     "return_2",
-			SrcPath:  "stage_1/valid/return_2.c",
+			SrcPath:  "testdata/stage_1/valid/return_2.c",
 			ExitCode: 2,
 		},
 	}
@@ -44,7 +44,7 @@ func TestStages(t *testing.T) {
 
 func AssertValid(t *testing.T, stage int) {
 	t.Run(fmt.Sprintf("stage_%d", stage), func(t *testing.T) {
-		pattern := fmt.Sprintf("stage_%d/valid/*.c", stage)
+		pattern := fmt.Sprintf("testdata/stage_%d/valid/*.c", stage)
 		valid, err := filepath.Glob(pattern)
 		assert.NilError(t, err)
 		for _, srcpath := range valid {
