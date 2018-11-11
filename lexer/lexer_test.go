@@ -15,6 +15,23 @@ type lexerTest struct {
 	Expected []token.Token
 }
 
+func (tt *lexerTest) Run(t *testing.T) {
+	src, err := ioutil.ReadFile(tt.SrcPath)
+	assert.NilError(t, err)
+	l := New(string(src))
+	var actual []token.Token
+	for i, e := range tt.Expected {
+		tok := l.Lex()
+		tok.Pos = token.Pos{}
+		actual = append(actual, tok)
+		if tok != e {
+			t.Logf("got:  %v", actual)
+			t.Logf("want: %v", tt.Expected)
+			t.Fatalf("test[%d] - wrong token. want=%s, got=%s", i, e, tok)
+		}
+	}
+}
+
 func makeValidStage1(name string, retval string) lexerTest {
 	return lexerTest{
 		SrcPath: filepath.Join("../testdata/stage_1/valid", name),
@@ -44,25 +61,6 @@ func TestLexerStage1(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.SrcPath, func(t *testing.T) {
-			AssertLexerTokens(t, tt)
-		})
-	}
-}
-
-func AssertLexerTokens(t *testing.T, tt lexerTest) {
-	src, err := ioutil.ReadFile(tt.SrcPath)
-	assert.NilError(t, err)
-	l := New(string(src))
-	var actual []token.Token
-	for i, e := range tt.Expected {
-		tok := l.Lex()
-		tok.Pos = token.Pos{}
-		actual = append(actual, tok)
-		if tok != e {
-			t.Logf("got:  %v", actual)
-			t.Logf("want: %v", tt.Expected)
-			t.Fatalf("test[%d] - wrong token. want=%s, got=%s", i, e, tok)
-		}
+		t.Run(tt.SrcPath, tt.Run)
 	}
 }
