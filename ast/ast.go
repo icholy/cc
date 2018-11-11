@@ -50,6 +50,16 @@ func (b *BinaryOp) exprNode()          {}
 func (b *BinaryOp) Token() token.Token { return b.Tok }
 func (b *BinaryOp) String() string     { return fmt.Sprintf("(%s %s %s)", b.Left, b.Op, b.Right) }
 
+type UnaryOp struct {
+	Tok   token.Token
+	Op    string
+	Value Expr
+}
+
+func (u *UnaryOp) exprNode()          {}
+func (u *UnaryOp) Token() token.Token { return u.Tok }
+func (u *UnaryOp) String() string     { return fmt.Sprintf("(%s %s)", u.Op, u.Value) }
+
 type Assignment struct {
 	Tok   token.Token
 	Var   *Var
