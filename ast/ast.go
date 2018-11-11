@@ -2,7 +2,6 @@ package ast
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/icholy/cc/token"
 )
@@ -23,19 +22,13 @@ type Expr interface {
 }
 
 type Program struct {
-	Tok        token.Token
-	Statements []Stmt
+	Tok  token.Token
+	Body Stmt
 }
 
 func (p *Program) stmtNode()          {}
 func (p *Program) Token() token.Token { return p.Tok }
-func (p *Program) String() string {
-	var b strings.Builder
-	for _, s := range p.Statements {
-		fmt.Fprintln(&b, s.String())
-	}
-	return b.String()
-}
+func (p *Program) String() string     { return p.Body.String() }
 
 type IntLiteral struct {
 	Tok   token.Token
