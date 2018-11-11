@@ -98,7 +98,7 @@ func (p *Parser) parseExpr() (ast.Expr, error) {
 	case p.peek.Is(token.INT_LIT):
 		return p.parseIntLit()
 	default:
-		return nil, fmt.Errorf("unexpected: %s", p.peek)
+		return p.parseUnaryOp()
 	}
 }
 
