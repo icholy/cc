@@ -14,7 +14,7 @@ _main:
 	ret
 `
 
-var re = regexp.MustCompile(`int main\s*\(\s*\)\s*{\s*return\s+(?P<ret>[0-9]+)\s*;\s*}`)
+var re = regexp.MustCompile(`int\s+main\s*\(\s*\)\s*{\s*return\s+(?P<ret>[0-9]+)\s*;\s*}`)
 
 func Compile(src string) (string, error) {
 	match := re.FindStringSubmatch(src)
