@@ -1,18 +1,29 @@
 package compiler
 
-const output = `
-.section        .text
+import (
+	"fmt"
+	"regexp"
+	"strconv"
+)
+
+const outputfmt = `
 .globl  _main
 _main:
-	pushl   %ebp
-	movl    %esp, %ebp
-	andl    $-16, %esp
-	call    ___main
-	movl    $2, %eax
+	movl    $%d, %%eax
 	leave
 	ret
 `
 
+var re = regexp.MustCompile(`int main\s*\(\s*\)\s*{\s*return\s+(?P<ret>[0-9]+)\s*;\s*}`)
+
 func Compile(src string) (string, error) {
-	return output, nil
+	match := re.FindStringSubmatch(src)
+	if len(match) != 2 {
+		return "", fmt.Errorf("cannot find return value")
+	}
+	n, err := strconv.Atoi(match[1])
+	if err != nil {
+		return "", nil
+	}
+	return fmt.Sprintf(outputfmt, n), nil
 }
