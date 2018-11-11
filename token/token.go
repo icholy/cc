@@ -44,6 +44,9 @@ const (
 	INT_LIT   = "INT_LIT"
 	INT_TYPE  = "INT_TYPE"
 	RETURN    = "RETURN"
+	MINUS     = "MINUS"
+	TILDA     = "TILDA"
+	BANG      = "BANG"
 )
 
 var Keywords = map[string]TokenType{

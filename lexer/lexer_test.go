@@ -64,3 +64,53 @@ func TestLexerStage1(t *testing.T) {
 		t.Run(tt.SrcPath, tt.Run)
 	}
 }
+
+func makeValidStage2(name string, retval ...token.Token) lexerTest {
+	tt := lexerTest{
+		SrcPath: filepath.Join("../testdata/stage_2/valid", name),
+	}
+	tt.Expected = append(tt.Expected,
+		token.New(token.INT_TYPE, "int"),
+		token.New(token.IDENT, "main"),
+		token.New(token.LPAREN, "("),
+		token.New(token.RPAREN, ")"),
+		token.New(token.LBRACE, "{"),
+		token.New(token.RETURN, "return"),
+	)
+	tt.Expected = append(tt.Expected, retval...)
+	tt.Expected = append(tt.Expected,
+		token.New(token.SEMICOLON, ";"),
+		token.New(token.RBRACE, "}"),
+		token.New(token.EOF, ""),
+	)
+	return tt
+}
+
+func TestLexerStage2(t *testing.T) {
+	tests := []lexerTest{
+		makeValidStage2("bitwise.c",
+			token.New(token.BANG, "!"),
+			token.New(token.INT_LIT, "12"),
+		),
+		makeValidStage2("bitwise_zero.c",
+			token.New(token.TILDA, "~"),
+			token.New(token.INT_LIT, "0"),
+		),
+		makeValidStage2("bitwise_zero.c",
+			token.New(token.TILDA, "~"),
+			token.New(token.INT_LIT, "0"),
+		),
+		makeValidStage2("neg.c",
+			token.New(token.MINUS, "-"),
+			token.New(token.INT_LIT, "5"),
+		),
+		makeValidStage2("nested_ops.c",
+			token.New(token.BANG, "!"),
+			token.New(token.MINUS, "-"),
+			token.New(token.INT_LIT, "3"),
+		),
+	}
+	for _, tt := range tests {
+		t.Run(tt.SrcPath, tt.Run)
+	}
+}

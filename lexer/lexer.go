@@ -70,6 +70,9 @@ var bytetokens = map[byte]token.TokenType{
 	'(': token.LPAREN,
 	')': token.RPAREN,
 	';': token.SEMICOLON,
+	'-': token.MINUS,
+	'~': token.TILDA,
+	'!': token.BANG,
 }
 
 func (l *Lexer) Lex() token.Token {
