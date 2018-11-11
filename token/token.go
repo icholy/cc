@@ -20,6 +20,10 @@ type Token struct {
 	Text string
 }
 
+func New(typ TokenType, text string) Token {
+	return Token{Type: typ, Text: text}
+}
+
 func (t Token) Is(typ TokenType) bool {
 	return t.Type == typ
 }

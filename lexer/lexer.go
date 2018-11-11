@@ -87,6 +87,18 @@ func (l *Lexer) Lex() token.Token {
 	}
 }
 
+func (l *Lexer) Tokenize() []token.Token {
+	var toks []token.Token
+	for {
+		tok := l.Lex()
+		toks = append(toks, tok)
+		if tok.Is(token.EOF) {
+			break
+		}
+	}
+	return toks
+}
+
 func (l *Lexer) lexInt() token.Token {
 	var text strings.Builder
 	for l.isDigit() {
