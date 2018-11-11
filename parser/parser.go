@@ -15,9 +15,14 @@ type Parser struct {
 	lex  *lexer.Lexer
 }
 
+func Parse(input string) (*ast.Program, error) {
+	l := lexer.New(input)
+	p := New(l)
+	return p.Parse()
+}
+
 func New(l *lexer.Lexer) *Parser {
-	cur, peek := l.Lex(), l.Lex()
-	return &Parser{lex: l, cur: cur, peek: peek}
+	return &Parser{lex: l, peek: l.Lex()}
 }
 
 func (p *Parser) next() {
@@ -27,7 +32,7 @@ func (p *Parser) next() {
 
 func (p *Parser) expectPeek(typ token.TokenType) error {
 	if !p.peek.Is(typ) {
-		return fmt.Errorf("invalid token: %s, expecting %s", p.cur, typ)
+		return fmt.Errorf("invalid token: %s, expecting %s", p.peek, typ)
 	}
 	p.next()
 	return nil
@@ -77,9 +82,6 @@ func (p *Parser) parseStmt() (ast.Stmt, error) {
 		return nil, err
 	}
 	ret := &ast.Return{Tok: p.cur}
-	if err := p.expectPeek(token.INT_LIT); err != nil {
-		return nil, err
-	}
 	expr, err := p.parseExpr()
 	if err != nil {
 		return nil, err
