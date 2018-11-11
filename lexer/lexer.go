@@ -91,7 +91,11 @@ func (l *Lexer) Lex() token.Token {
 	case l.isDigit():
 		return l.lexInt()
 	case l.isAlpha():
-		return l.lexIdent()
+		tok := l.lexIdent()
+		if typ, ok := token.Keywords[tok.Text]; ok {
+			tok.Type = typ
+		}
+		return tok
 	default:
 		return l.newByteTok(token.ILLEGAL)
 	}

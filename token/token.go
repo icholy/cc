@@ -43,4 +43,10 @@ const (
 	SEMICOLON = "SEMICOLON"
 	INT_LIT   = "INT_LIT"
 	INT_TYPE  = "INT_TYPE"
+	RETURN    = "RETURN"
 )
+
+var Keywords = map[string]TokenType{
+	"return": RETURN,
+	"int":    INT_TYPE,
+}

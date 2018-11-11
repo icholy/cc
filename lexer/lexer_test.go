@@ -19,12 +19,12 @@ func makeValidStage1(name string, retval string) lexerTest {
 	return lexerTest{
 		SrcPath: filepath.Join("../testdata/stage_1/valid", name),
 		Expected: []token.Token{
-			token.New(token.IDENT, "int"),
+			token.New(token.INT_TYPE, "int"),
 			token.New(token.IDENT, "main"),
 			token.New(token.LPAREN, "("),
 			token.New(token.RPAREN, ")"),
 			token.New(token.LBRACE, "{"),
-			token.New(token.IDENT, "return"),
+			token.New(token.RETURN, "return"),
 			token.New(token.INT_LIT, retval),
 			token.New(token.SEMICOLON, ";"),
 			token.New(token.RBRACE, "}"),
