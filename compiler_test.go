@@ -1,4 +1,4 @@
-package compiler
+package cc
 
 import (
 	"fmt"
