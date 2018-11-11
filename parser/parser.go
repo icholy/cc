@@ -94,6 +94,31 @@ func (p *Parser) parseStmt() (ast.Stmt, error) {
 }
 
 func (p *Parser) parseExpr() (ast.Expr, error) {
+	switch {
+	case p.peek.Is(token.INT_LIT):
+		return p.parseIntLit()
+	default:
+		return nil, fmt.Errorf("unexpected: %s", p.peek)
+	}
+}
+
+func (p *Parser) parseUnaryOp() (ast.Expr, error) {
+	p.next()
+	switch p.cur.Type {
+	case token.BANG, token.MINUS, token.TILDA:
+	default:
+		return nil, fmt.Errorf("invalid unary op: %s", p.cur)
+	}
+	unary := &ast.UnaryOp{Tok: p.cur, Op: p.cur.Text}
+	expr, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+	unary.Value = expr
+	return unary, nil
+}
+
+func (p *Parser) parseIntLit() (ast.Expr, error) {
 	if err := p.expectPeek(token.INT_LIT); err != nil {
 		return nil, err
 	}
