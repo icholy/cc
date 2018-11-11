@@ -39,10 +39,9 @@ func (tt *OutputTest) Run(t *testing.T) {
 	assert.NilError(t, err)
 	// assembly & link with gcc
 	dir := fs.NewDir(t, "cc", fs.WithFile("out.s", code))
-	// defer dir.Remove()
+	defer dir.Remove()
 	gcc := exec.Command("gcc", "-m32", "out.s", "-o", "out.exe")
 	gcc.Dir = dir.Path()
-	t.Log(dir.Path())
 	// check the output
 	output, err := gcc.CombinedOutput()
 	assert.NilError(t, err, "gcc: %s", string(output))
