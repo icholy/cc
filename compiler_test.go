@@ -55,8 +55,6 @@ func (tt *OutputTest) Run(t *testing.T) {
 	assert.Equal(t, string(output), tt.Ouput)
 }
 
-const defaultFailedCode = 1
-
 func ExitCode(cmd *exec.Cmd, err error) int {
 	if err != nil {
 		// try to get the exit code
