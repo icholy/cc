@@ -38,6 +38,28 @@ func TestAST(t *testing.T) {
 			Value: 5,
 		},
 	}))
+	AssertEqualAST(t, "../testdata/stage_3/valid/associativity.c", withRetval(
+		&ast.BinaryOp{
+			Op: "-",
+			Left: &ast.BinaryOp{
+				Op:    "-",
+				Left:  &ast.IntLiteral{Value: 1},
+				Right: &ast.IntLiteral{Value: 2},
+			},
+			Right: &ast.IntLiteral{Value: 3},
+		},
+	))
+	AssertEqualAST(t, "../testdata/stage_3/valid/precedence.c", withRetval(
+		&ast.BinaryOp{
+			Op:   "+",
+			Left: &ast.IntLiteral{Value: 2},
+			Right: &ast.BinaryOp{
+				Op:    "*",
+				Left:  &ast.IntLiteral{Value: 3},
+				Right: &ast.IntLiteral{Value: 4},
+			},
+		},
+	))
 }
 
 type validityTest struct {
