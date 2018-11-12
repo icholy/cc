@@ -94,6 +94,17 @@ func TestLexer(t *testing.T) {
 			token.New(token.ASTERISK, "*"),
 			token.New(token.INT_LIT, "4"),
 		),
+		withRetval(4, "and_false.c",
+			token.New(token.INT_LIT, "1"),
+			token.New(token.AND, "&&"),
+			token.New(token.INT_LIT, "0"),
+		),
+		withRetval(4, "and_true.c",
+			token.New(token.INT_LIT, "1"),
+			token.New(token.AND, "&&"),
+			token.New(token.MINUS, "-"),
+			token.New(token.INT_LIT, "1"),
+		),
 	}
 
 	for _, tt := range tests {

@@ -50,6 +50,14 @@ const (
 	SLASH     = "SLASH"
 	TILDA     = "TILDA"
 	BANG      = "BANG"
+	AND       = "AND"
+	OR        = "OR"
+	EQ        = "EQ"
+	NE        = "NE"
+	LT        = "LT"
+	LT_EQ     = "LT_EQ"
+	GT        = "GT"
+	GT_EQ     = "GT_EQ"
 )
 
 var Keywords = map[string]TokenType{

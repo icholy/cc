@@ -76,6 +76,17 @@ var bytetokens = map[byte]token.TokenType{
 	'/': token.SLASH,
 	'~': token.TILDA,
 	'!': token.BANG,
+	'>': token.GT,
+	'<': token.LT,
+}
+
+var twobytetokens = map[string]token.TokenType{
+	"&&": token.AND,
+	"||": token.OR,
+	"==": token.EQ,
+	"!=": token.NE,
+	"<=": token.LT_EQ,
+	">=": token.GT_EQ,
 }
 
 func (l *Lexer) Lex() token.Token {
@@ -86,6 +97,13 @@ func (l *Lexer) Lex() token.Token {
 	// check for end of file
 	if l.ch == 0 {
 		return l.newTok(token.EOF, "")
+	}
+
+	// double byte tokens
+	twobytes := l.twoBytes()
+	if typ, ok := twobytetokens[twobytes]; ok {
+		l.read()
+		return l.newTok(typ, twobytes)
 	}
 
 	// single byte tokens
@@ -106,6 +124,10 @@ func (l *Lexer) Lex() token.Token {
 	default:
 		return l.newByteTok(token.ILLEGAL)
 	}
+}
+
+func (l *Lexer) twoBytes() string {
+	return string([]byte{l.ch, l.peek()})
 }
 
 func (l *Lexer) Tokenize() []token.Token {
