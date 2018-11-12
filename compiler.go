@@ -35,7 +35,7 @@ func (c *Compiler) Assembly() string {
 }
 
 func (c *Compiler) emitf(format string, args ...interface{}) {
-	fmt.Fprintf(c.asm, format, args...)
+	fmt.Fprintf(c.asm, format+"\n", args...)
 }
 
 func (c *Compiler) Compile(p *ast.Program) error {
@@ -51,7 +51,7 @@ func (c *Compiler) Compile(p *ast.Program) error {
 func (c *Compiler) compileExpr(expr ast.Expr) error {
 	switch expr := expr.(type) {
 	case *ast.IntLiteral:
-		c.emitf("movl $%d, %%eax\n", expr.Value)
+		c.emitf("movl $%d, %%eax", expr.Value)
 	case *ast.UnaryOp:
 		return c.compileUnaryOp(expr)
 	case *ast.BinaryOp:
@@ -65,13 +65,13 @@ func (c *Compiler) compileExpr(expr ast.Expr) error {
 func (c *Compiler) compileUnaryOp(unary *ast.UnaryOp) error {
 	switch unary.Op {
 	case "-":
-		c.emitf("neg %%eax\n")
+		c.emitf("neg %%eax")
 	case "~":
-		c.emitf("not %%eax\n")
+		c.emitf("not %%eax")
 	case "!":
-		c.emitf("cmpl $0, %%eax\n")
-		c.emitf("movl $0, %%eax\n")
-		c.emitf("sete %%al\n")
+		c.emitf("cmpl $0, %%eax")
+		c.emitf("movl $0, %%eax")
+		c.emitf("sete %%al")
 	default:
 		return fmt.Errorf("invalid unary op: %s", unary)
 	}
@@ -102,48 +102,48 @@ func (c *Compiler) compileBinaryOp(binary *ast.BinaryOp) error {
 	c.emitf("pop %%ecx\n")
 	switch binary.Op {
 	case "+":
-		c.emitf("add %%ecx, %%eax\n")
+		c.emitf("add %%ecx, %%eax")
 	case "-":
-		c.emitf("sub %%ecx, %%eax\n")
+		c.emitf("sub %%ecx, %%eax")
 	case "*":
-		c.emitf("imul %%ecx, %%eax\n")
+		c.emitf("imul %%ecx, %%eax")
 	case "/":
-		c.emitf("idiv %%ecx, %%eax\n")
+		c.emitf("idiv %%ecx, %%eax")
 	case "==":
-		c.emitf("cmpl %%eax, %%ecx\n")
-		c.emitf("movl $0, %%eax\n")
-		c.emitf("sete %%al\n")
+		c.emitf("cmpl %%eax, %%ecx")
+		c.emitf("movl $0, %%eax")
+		c.emitf("sete %%al")
 	case "!=":
-		c.emitf("cmpl %%eax, %%ecx\n")
-		c.emitf("movl $0, %%eax\n")
-		c.emitf("setne %%al\n")
+		c.emitf("cmpl %%eax, %%ecx")
+		c.emitf("movl $0, %%eax")
+		c.emitf("setne %%al")
 	case ">":
-		c.emitf("cmpl %%eax, %%ecx\n")
-		c.emitf("movl $0, %%eax\n")
-		c.emitf("setg %%al\n")
+		c.emitf("cmpl %%eax, %%ecx")
+		c.emitf("movl $0, %%eax")
+		c.emitf("setg %%al")
 	case ">=":
-		c.emitf("cmpl %%eax, %%ecx\n")
-		c.emitf("movl $0, %%eax\n")
-		c.emitf("setge %%al\n")
+		c.emitf("cmpl %%eax, %%ecx")
+		c.emitf("movl $0, %%eax")
+		c.emitf("setge %%al")
 	case "<":
-		c.emitf("cmpl %%eax, %%ecx\n")
-		c.emitf("movl $0, %%eax\n")
-		c.emitf("setl %%al\n")
+		c.emitf("cmpl %%eax, %%ecx")
+		c.emitf("movl $0, %%eax")
+		c.emitf("setl %%al")
 	case "<=":
-		c.emitf("cmpl %%eax, %%ecx\n")
-		c.emitf("movl $0, %%eax\n")
-		c.emitf("setle %%al\n")
+		c.emitf("cmpl %%eax, %%ecx")
+		c.emitf("movl $0, %%eax")
+		c.emitf("setle %%al")
 	case "||":
-		c.emitf("orl %%eax, %%ecx\n")
-		c.emitf("movl $0, %%eax\n")
-		c.emitf("setne %%al\n")
+		c.emitf("orl %%eax, %%ecx")
+		c.emitf("movl $0, %%eax")
+		c.emitf("setne %%al")
 	case "&&":
-		c.emitf("cmpl $0, %%ecx\n")
-		c.emitf("setne %%cl\n")
-		c.emitf("cmpl $0, %%eax\n")
-		c.emitf("movl $0, %%eax\n")
-		c.emitf("setne %%al\n")
-		c.emitf("andb %%cl, %%al\n")
+		c.emitf("cmpl $0, %%ecx")
+		c.emitf("setne %%cl")
+		c.emitf("cmpl $0, %%eax")
+		c.emitf("movl $0, %%eax")
+		c.emitf("setne %%al")
+		c.emitf("andb %%cl, %%al")
 	default:
 		return fmt.Errorf("invalid binary op: %s", binary)
 	}
