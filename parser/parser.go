@@ -38,6 +38,15 @@ func (p *Parser) expectPeek(typ token.TokenType) error {
 	return nil
 }
 
+func (p *Parser) peekIsOneOf(tt ...token.TokenType) bool {
+	for _, t := range tt {
+		if p.peek.Is(t) {
+			return true
+		}
+	}
+	return false
+}
+
 func (p *Parser) Parse() (*ast.Program, error) {
 	prog := &ast.Program{Tok: p.cur}
 	fn, err := p.parseFunction()
@@ -94,14 +103,55 @@ func (p *Parser) parseStmt() (ast.Stmt, error) {
 }
 
 func (p *Parser) parseExpr() (ast.Expr, error) {
-	expr, err := p.parseTerm()
+	return p.parseOr()
+}
+
+func (p *Parser) parseOr() (ast.Expr, error) {
+	return p.parseBinary(p.parseAnd, token.OR)
+}
+
+func (p *Parser) parseAnd() (ast.Expr, error) {
+	return p.parseBinary(p.parseEquality, token.AND)
+}
+
+func (p *Parser) parseEquality() (ast.Expr, error) {
+	return p.parseBinary(p.parseRelational, token.EQ, token.NE)
+}
+
+func (p *Parser) parseRelational() (ast.Expr, error) {
+	return p.parseBinary(p.parseAdditive, token.GT, token.LT, token.GT_EQ, token.LT_EQ)
+}
+
+func (p *Parser) parseAdditive() (ast.Expr, error) {
+	return p.parseBinary(p.parseTerm, token.PLUS, token.MINUS)
+}
+
+func (p *Parser) parseTerm() (ast.Expr, error) {
+	return p.parseBinary(p.parseFactor, token.ASTERISK, token.SLASH)
+}
+
+func (p *Parser) parseFactor() (ast.Expr, error) {
+	switch {
+	case p.peek.Is(token.INT_LIT):
+		return p.parseIntLit()
+	case p.peek.Is(token.LPAREN):
+		return p.parseGrouped()
+	case p.isUnaryOp(p.peek):
+		return p.parseUnaryOp()
+	default:
+		return nil, fmt.Errorf("invalid factor: %s", p.cur)
+	}
+}
+
+func (p *Parser) parseBinary(parse func() (ast.Expr, error), types ...token.TokenType) (ast.Expr, error) {
+	expr, err := parse()
 	if err != nil {
 		return nil, err
 	}
-	for p.peek.Is(token.PLUS) || p.peek.Is(token.MINUS) {
+	for p.peekIsOneOf(types...) {
 		p.next()
 		bin := &ast.BinaryOp{Tok: p.cur, Op: p.cur.Text, Left: expr}
-		right, err := p.parseTerm()
+		right, err := parse()
 		if err != nil {
 			return nil, err
 		}
@@ -109,24 +159,6 @@ func (p *Parser) parseExpr() (ast.Expr, error) {
 		expr = bin
 	}
 	return expr, nil
-}
-
-func (p *Parser) parseTerm() (ast.Expr, error) {
-	term, err := p.parseFactor()
-	if err != nil {
-		return nil, err
-	}
-	for p.peek.Is(token.ASTERISK) || p.peek.Is(token.SLASH) {
-		p.next()
-		bin := &ast.BinaryOp{Tok: p.cur, Op: p.cur.Text, Left: term}
-		right, err := p.parseFactor()
-		if err != nil {
-			return nil, err
-		}
-		bin.Right = right
-		term = bin
-	}
-	return term, nil
 }
 
 func (p *Parser) isUnaryOp(tok token.Token) bool {
@@ -164,19 +196,6 @@ func (p *Parser) parseGrouped() (ast.Expr, error) {
 		return nil, err
 	}
 	return expr, nil
-}
-
-func (p *Parser) parseFactor() (ast.Expr, error) {
-	switch {
-	case p.peek.Is(token.INT_LIT):
-		return p.parseIntLit()
-	case p.peek.Is(token.LPAREN):
-		return p.parseGrouped()
-	case p.isUnaryOp(p.peek):
-		return p.parseUnaryOp()
-	default:
-		return nil, fmt.Errorf("invalid factor: %s", p.cur)
-	}
 }
 
 func (p *Parser) parseIntLit() (ast.Expr, error) {

@@ -18,6 +18,7 @@ func TestValidParsing(t *testing.T) {
 	AssertParsingStage(t, 1)
 	AssertParsingStage(t, 2)
 	AssertParsingStage(t, 3)
+	AssertParsingStage(t, 4)
 }
 
 func withRetval(retval ast.Expr) *ast.Program {
@@ -66,6 +67,13 @@ func TestAST(t *testing.T) {
 				Left:  &ast.IntLiteral{Value: 3},
 				Right: &ast.IntLiteral{Value: 4},
 			},
+		},
+	))
+	AssertEqualAST(t, "../testdata/stage_4/valid/eq_true.c", withRetval(
+		&ast.BinaryOp{
+			Op:    "==",
+			Left:  &ast.IntLiteral{Value: 1},
+			Right: &ast.IntLiteral{Value: 1},
 		},
 	))
 }
