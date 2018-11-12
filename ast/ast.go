@@ -86,10 +86,6 @@ func (v *VarDec) String() string {
 	return fmt.Sprintf("int %s = %s;", v.Name, v.Value)
 }
 
-func (a *Assignment) exprNode()          {}
-func (a *Assignment) Token() token.Token { return a.Tok }
-func (a *Assignment) String() string     { return fmt.Sprint("%s = %s", a.Var, a.Value) }
-
 type Var struct {
 	Tok  token.Token
 	Name string

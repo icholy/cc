@@ -99,6 +99,53 @@ func (p *Parser) parseFunction() (*ast.Function, error) {
 }
 
 func (p *Parser) parseStmt() (ast.Stmt, error) {
+	switch {
+	case p.peek.Is(token.INT_TYPE):
+		return p.parseVarDec()
+	case p.peek.Is(token.RETURN):
+		return p.parseReturn()
+	default:
+		return p.parseExprStmt()
+	}
+}
+
+func (p *Parser) parseVarDec() (ast.Stmt, error) {
+	decl := &ast.VarDec{Tok: p.peek}
+	if err := p.expectPeek(token.INT_TYPE); err != nil {
+		return nil, err
+	}
+	if err := p.expectPeek(token.IDENT); err != nil {
+		return nil, err
+	}
+	decl.Name = p.cur.Text
+	if p.peek.Is(token.ASSIGN) {
+		p.next()
+		value, err := p.parseIntLit()
+		if err != nil {
+			return nil, err
+		}
+		decl.Value = value
+	}
+	if err := p.expectPeek(token.SEMICOLON); err != nil {
+		return nil, err
+	}
+	return decl, nil
+}
+
+func (p *Parser) parseExprStmt() (ast.Stmt, error) {
+	stmt := &ast.ExprStmt{Tok: p.peek}
+	expr, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+	stmt.Expr = expr
+	if err := p.expectPeek(token.SEMICOLON); err != nil {
+		return nil, err
+	}
+	return stmt, nil
+}
+
+func (p *Parser) parseReturn() (ast.Stmt, error) {
 	if err := p.expectPeek(token.RETURN); err != nil {
 		return nil, err
 	}
@@ -115,7 +162,36 @@ func (p *Parser) parseStmt() (ast.Stmt, error) {
 }
 
 func (p *Parser) parseExpr() (ast.Expr, error) {
-	return p.parseOr()
+	switch {
+	case p.peek.Is(token.IDENT):
+		return p.parseAssign()
+	default:
+		return p.parseOr()
+	}
+}
+
+func (p *Parser) parseVar() (*ast.Var, error) {
+	if err := p.expectPeek(token.IDENT); err != nil {
+		return nil, err
+	}
+	return &ast.Var{Tok: p.cur, Name: p.cur.Text}, nil
+}
+
+func (p *Parser) parseAssign() (ast.Expr, error) {
+	v, err := p.parseVar()
+	if err != nil {
+		return nil, err
+	}
+	expr := &ast.Assignment{Tok: p.cur, Var: v}
+	if err := p.expectPeek(token.ASSIGN); err != nil {
+		return nil, err
+	}
+	value, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+	expr.Value = value
+	return expr, nil
 }
 
 func (p *Parser) parseOr() (ast.Expr, error) {
@@ -144,6 +220,8 @@ func (p *Parser) parseTerm() (ast.Expr, error) {
 
 func (p *Parser) parseFactor() (ast.Expr, error) {
 	switch {
+	case p.peek.Is(token.IDENT):
+		return p.parseVar()
 	case p.peek.Is(token.INT_LIT):
 		return p.parseIntLit()
 	case p.peek.Is(token.LPAREN):
