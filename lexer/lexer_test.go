@@ -1,8 +1,8 @@
 package lexer
 
 import (
+	"fmt"
 	"io/ioutil"
-	"path/filepath"
 	"testing"
 
 	"gotest.tools/assert"
@@ -32,42 +32,9 @@ func (tt *lexerTest) Run(t *testing.T) {
 	}
 }
 
-func makeValidStage1(name string, retval string) lexerTest {
-	return lexerTest{
-		SrcPath: filepath.Join("../testdata/stage_1/valid", name),
-		Expected: []token.Token{
-			token.New(token.INT_TYPE, "int"),
-			token.New(token.IDENT, "main"),
-			token.New(token.LPAREN, "("),
-			token.New(token.RPAREN, ")"),
-			token.New(token.LBRACE, "{"),
-			token.New(token.RETURN, "return"),
-			token.New(token.INT_LIT, retval),
-			token.New(token.SEMICOLON, ";"),
-			token.New(token.RBRACE, "}"),
-			token.New(token.EOF, ""),
-		},
-	}
-}
-
-func TestLexerStage1(t *testing.T) {
-	tests := []lexerTest{
-		makeValidStage1("multi_digit.c", "100"),
-		makeValidStage1("newlines.c", "0"),
-		makeValidStage1("return_2.c", "2"),
-		makeValidStage1("no_newlines.c", "0"),
-		makeValidStage1("return_0.c", "0"),
-		makeValidStage1("spaces.c", "0"),
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.SrcPath, tt.Run)
-	}
-}
-
-func makeValidStage2(name string, retval ...token.Token) lexerTest {
+func withRetval(stage int, name string, retval ...token.Token) lexerTest {
 	tt := lexerTest{
-		SrcPath: filepath.Join("../testdata/stage_2/valid", name),
+		SrcPath: fmt.Sprintf("../testdata/stage_%d/valid/%s", stage, name),
 	}
 	tt.Expected = append(tt.Expected,
 		token.New(token.INT_TYPE, "int"),
@@ -86,30 +53,49 @@ func makeValidStage2(name string, retval ...token.Token) lexerTest {
 	return tt
 }
 
-func TestLexerStage2(t *testing.T) {
+func TestLexer(t *testing.T) {
 	tests := []lexerTest{
-		makeValidStage2("bitwise.c",
+		withRetval(1, "multi_digit.c", token.New(token.INT_LIT, "100")),
+		withRetval(1, "newlines.c", token.New(token.INT_LIT, "0")),
+		withRetval(1, "return_2.c", token.New(token.INT_LIT, "2")),
+		withRetval(1, "no_newlines.c", token.New(token.INT_LIT, "0")),
+		withRetval(1, "return_0.c", token.New(token.INT_LIT, "0")),
+		withRetval(1, "spaces.c", token.New(token.INT_LIT, "0")),
+		withRetval(2, "bitwise.c",
 			token.New(token.BANG, "!"),
 			token.New(token.INT_LIT, "12"),
 		),
-		makeValidStage2("bitwise_zero.c",
+		withRetval(2, "bitwise_zero.c",
 			token.New(token.TILDA, "~"),
 			token.New(token.INT_LIT, "0"),
 		),
-		makeValidStage2("bitwise_zero.c",
+		withRetval(2, "bitwise_zero.c",
 			token.New(token.TILDA, "~"),
 			token.New(token.INT_LIT, "0"),
 		),
-		makeValidStage2("neg.c",
+		withRetval(2, "neg.c",
 			token.New(token.MINUS, "-"),
 			token.New(token.INT_LIT, "5"),
 		),
-		makeValidStage2("nested_ops.c",
+		withRetval(2, "nested_ops.c",
 			token.New(token.BANG, "!"),
 			token.New(token.MINUS, "-"),
 			token.New(token.INT_LIT, "3"),
 		),
+		withRetval(3, "add.c",
+			token.New(token.INT_LIT, "1"),
+			token.New(token.PLUS, "+"),
+			token.New(token.INT_LIT, "2"),
+		),
+		withRetval(3, "precedence.c",
+			token.New(token.INT_LIT, "2"),
+			token.New(token.PLUS, "+"),
+			token.New(token.INT_LIT, "3"),
+			token.New(token.ASTERISK, "*"),
+			token.New(token.INT_LIT, "4"),
+		),
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.SrcPath, tt.Run)
 	}

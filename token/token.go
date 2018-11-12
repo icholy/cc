@@ -45,6 +45,9 @@ const (
 	INT_TYPE  = "INT_TYPE"
 	RETURN    = "RETURN"
 	MINUS     = "MINUS"
+	PLUS      = "PLUS"
+	ASTERISK  = "ASTERISK"
+	SLASH     = "SLASH"
 	TILDA     = "TILDA"
 	BANG      = "BANG"
 )

@@ -71,6 +71,9 @@ var bytetokens = map[byte]token.TokenType{
 	')': token.RPAREN,
 	';': token.SEMICOLON,
 	'-': token.MINUS,
+	'+': token.PLUS,
+	'*': token.ASTERISK,
+	'/': token.SLASH,
 	'~': token.TILDA,
 	'!': token.BANG,
 }
