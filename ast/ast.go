@@ -66,6 +66,21 @@ type Assignment struct {
 	Value Expr
 }
 
+type VarDec struct {
+	Tok   token.Token
+	Name  string
+	Value Expr
+}
+
+func (v *VarDec) stmtNode()          {}
+func (v *VarDec) Token() token.Token { return v.Tok }
+func (v *VarDec) String() string {
+	if v.Value == nil {
+		return fmt.Sprintf("int %s;", v.Name)
+	}
+	return fmt.Sprintf("int %s = %s;", v.Name, v.Value)
+}
+
 func (a *Assignment) exprNode()          {}
 func (a *Assignment) Token() token.Token { return a.Tok }
 func (a *Assignment) String() string     { return fmt.Sprint("%s = %s", a.Var, a.Value) }
