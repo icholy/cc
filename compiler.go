@@ -34,8 +34,27 @@ func compilerExpr(expr ast.Expr, asm *strings.Builder) error {
 	switch expr := expr.(type) {
 	case *ast.IntLiteral:
 		fmt.Fprintf(asm, "movl $%d, %%eax\n", expr.Value)
+	case *ast.UnaryOp:
+		return compileUnaryOp(expr, asm)
 	default:
 		return fmt.Errorf("cannot compile: %s", expr)
+	}
+	return nil
+}
+
+func compileUnaryOp(unary *ast.UnaryOp, asm *strings.Builder) error {
+	switch unary.Op {
+	case "-":
+		fmt.Fprintf(asm, "neg %%eax\n")
+	case "~":
+		fmt.Fprintf(asm, "xor %%eax\n")
+	case "!":
+		fmt.Fprintf(asm, "cmpl $0, %%eax\n")
+		fmt.Fprintf(asm, "xor %%eax, %%eax\n")
+		fmt.Fprintf(asm, "sete %%al\n")
+		// somethin
+	default:
+		return fmt.Errorf("invalid unary op: %s", unary)
 	}
 	return nil
 }
