@@ -10,9 +10,10 @@ import (
 )
 
 type Parser struct {
-	peek token.Token
-	cur  token.Token
-	lex  *lexer.Lexer
+	peek     token.Token
+	peekpeek token.Token
+	cur      token.Token
+	lex      *lexer.Lexer
 }
 
 func Parse(input string) (*ast.Program, error) {
@@ -22,12 +23,18 @@ func Parse(input string) (*ast.Program, error) {
 }
 
 func New(l *lexer.Lexer) *Parser {
-	return &Parser{lex: l, peek: l.Lex()}
+	peek := l.Lex()
+	return &Parser{
+		lex:      l,
+		peek:     peek,
+		peekpeek: l.Lex(),
+	}
 }
 
 func (p *Parser) next() {
 	p.cur = p.peek
-	p.peek = p.lex.Lex()
+	p.peek = p.peekpeek
+	p.peekpeek = p.lex.Lex()
 }
 
 func (p *Parser) expectPeek(typ token.TokenType) error {
@@ -120,7 +127,7 @@ func (p *Parser) parseVarDec() (ast.Stmt, error) {
 	decl.Name = p.cur.Text
 	if p.peek.Is(token.ASSIGN) {
 		p.next()
-		value, err := p.parseIntLit()
+		value, err := p.parseExpr()
 		if err != nil {
 			return nil, err
 		}
@@ -163,7 +170,7 @@ func (p *Parser) parseReturn() (ast.Stmt, error) {
 
 func (p *Parser) parseExpr() (ast.Expr, error) {
 	switch {
-	case p.peek.Is(token.IDENT):
+	case p.peek.Is(token.IDENT) && p.peekpeek.Is(token.ASSIGN):
 		return p.parseAssign()
 	default:
 		return p.parseOr()
