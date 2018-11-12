@@ -30,6 +30,19 @@ func TestAST(t *testing.T) {
 			},
 		},
 	})
+	AssertEqualAST(t, "../testdata/stage_2/valid/neg.c", &ast.Program{
+		Body: &ast.Function{
+			Name: "main",
+			Body: &ast.Return{
+				Value: &ast.UnaryOp{
+					Op: "-",
+					Value: &ast.IntLiteral{
+						Value: 5,
+					},
+				},
+			},
+		},
+	})
 }
 
 type validityTest struct {
