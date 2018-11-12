@@ -13,136 +13,174 @@ func Compile(src string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var asm strings.Builder
-	if err := compileProgram(prog, &asm); err != nil {
+	c := New()
+	if err := c.Compile(prog); err != nil {
 		return "", err
 	}
-	return asm.String(), nil
+	return c.Assembly(), nil
 }
 
-func compileProgram(p *ast.Program, asm *strings.Builder) error {
+type Compiler struct {
+	asm *strings.Builder
+}
+
+func New() *Compiler {
+	return &Compiler{
+		asm: &strings.Builder{},
+	}
+}
+
+func (c *Compiler) Assembly() string {
+	return c.asm.String()
+}
+
+func (c *Compiler) emitf(format string, args ...interface{}) {
+	fmt.Fprintf(c.asm, format, args...)
+}
+
+func (c *Compiler) Compile(p *ast.Program) error {
 	switch stmt := p.Body.(type) {
 	case *ast.Function:
-		return compileFunction(stmt, asm)
+		return c.compileFunction(stmt)
 	default:
 		return fmt.Errorf("cannot compile: %s", p.Body)
 	}
 	return nil
 }
 
-func compileExpr(expr ast.Expr, asm *strings.Builder) error {
+func (c *Compiler) compileExpr(expr ast.Expr) error {
 	switch expr := expr.(type) {
 	case *ast.IntLiteral:
-		fmt.Fprintf(asm, "movl $%d, %%eax\n", expr.Value)
+		c.emitf("movl $%d, %%eax\n", expr.Value)
 	case *ast.UnaryOp:
-		return compileUnaryOp(expr, asm)
+		return c.compileUnaryOp(expr)
 	case *ast.BinaryOp:
-		return compileBinaryOp(expr, asm)
+		return c.compileBinaryOp(expr)
 	default:
 		return fmt.Errorf("cannot compile: %s", expr)
 	}
 	return nil
 }
 
-func compileUnaryOp(unary *ast.UnaryOp, asm *strings.Builder) error {
+func (c *Compiler) compileUnaryOp(unary *ast.UnaryOp) error {
 	switch unary.Op {
 	case "-":
-		fmt.Fprintf(asm, "neg %%eax\n")
+		c.emitf("neg %%eax\n")
 	case "~":
-		fmt.Fprintf(asm, "not %%eax\n")
+		c.emitf("not %%eax\n")
 	case "!":
-		fmt.Fprintf(asm, "cmpl $0, %%eax\n")
-		fmt.Fprintf(asm, "movl $0, %%eax\n")
-		fmt.Fprintf(asm, "sete %%al\n")
+		c.emitf("cmpl $0, %%eax\n")
+		c.emitf("movl $0, %%eax\n")
+		c.emitf("sete %%al\n")
 	default:
 		return fmt.Errorf("invalid unary op: %s", unary)
 	}
 	return nil
 }
 
-func compileStmt(stmt ast.Stmt, asm *strings.Builder) error {
+func (c *Compiler) compileStmt(stmt ast.Stmt) error {
 	switch stmt := stmt.(type) {
 	case *ast.Return:
-		if err := compileExpr(stmt.Value, asm); err != nil {
+		if err := c.compileExpr(stmt.Value); err != nil {
 			return err
 		}
-		fmt.Fprintf(asm, "ret\n")
+		c.emitf("ret\n")
 	default:
 		return fmt.Errorf("cannot compile: %s", stmt)
 	}
 	return nil
 }
 
-func compileBinaryOp(binary *ast.BinaryOp, asm *strings.Builder) error {
-	if err := compileExpr(binary.Left, asm); err != nil {
+func (c *Compiler) compileBinaryOp(binary *ast.BinaryOp) error {
+	if err := c.compileExpr(binary.Left); err != nil {
 		return err
 	}
-	fmt.Fprintf(asm, "push %%eax\n")
-	if err := compileExpr(binary.Right, asm); err != nil {
+	c.emitf("push %%eax\n")
+	if err := c.compileExpr(binary.Right); err != nil {
 		return err
 	}
-	fmt.Fprintf(asm, "pop %%ecx\n")
+	c.emitf("pop %%ecx\n")
 	switch binary.Op {
 	case "+":
-		fmt.Fprintf(asm, "add %%ecx, %%eax\n")
+		c.emitf("add %%ecx, %%eax\n")
 	case "-":
-		fmt.Fprintf(asm, "sub %%ecx, %%eax\n")
+		c.emitf("sub %%ecx, %%eax\n")
 	case "*":
-		fmt.Fprintf(asm, "imul %%ecx, %%eax\n")
+		c.emitf("imul %%ecx, %%eax\n")
 	case "/":
-		fmt.Fprintf(asm, "idiv %%ecx, %%eax\n")
+		c.emitf("idiv %%ecx, %%eax\n")
 	case "==":
-		fmt.Fprintf(asm, "cmpl %%eax, %%ecx\n")
-		fmt.Fprintf(asm, "movl $0, %%eax\n")
-		fmt.Fprintf(asm, "sete %%al\n")
+		c.emitf("cmpl %%eax, %%ecx\n")
+		c.emitf("movl $0, %%eax\n")
+		c.emitf("sete %%al\n")
 	case "!=":
-		fmt.Fprintf(asm, "cmpl %%eax, %%ecx\n")
-		fmt.Fprintf(asm, "movl $0, %%eax\n")
-		fmt.Fprintf(asm, "setne %%al\n")
+		c.emitf("cmpl %%eax, %%ecx\n")
+		c.emitf("movl $0, %%eax\n")
+		c.emitf("setne %%al\n")
 	case ">":
-		fmt.Fprintf(asm, "cmpl %%eax, %%ecx\n")
-		fmt.Fprintf(asm, "movl $0, %%eax\n")
-		fmt.Fprintf(asm, "setg %%al\n")
+		c.emitf("cmpl %%eax, %%ecx\n")
+		c.emitf("movl $0, %%eax\n")
+		c.emitf("setg %%al\n")
 	case ">=":
-		fmt.Fprintf(asm, "cmpl %%eax, %%ecx\n")
-		fmt.Fprintf(asm, "movl $0, %%eax\n")
-		fmt.Fprintf(asm, "setge %%al\n")
+		c.emitf("cmpl %%eax, %%ecx\n")
+		c.emitf("movl $0, %%eax\n")
+		c.emitf("setge %%al\n")
 	case "<":
-		fmt.Fprintf(asm, "cmpl %%eax, %%ecx\n")
-		fmt.Fprintf(asm, "movl $0, %%eax\n")
-		fmt.Fprintf(asm, "setl %%al\n")
+		c.emitf("cmpl %%eax, %%ecx\n")
+		c.emitf("movl $0, %%eax\n")
+		c.emitf("setl %%al\n")
 	case "<=":
-		fmt.Fprintf(asm, "cmpl %%eax, %%ecx\n")
-		fmt.Fprintf(asm, "movl $0, %%eax\n")
-		fmt.Fprintf(asm, "setle %%al\n")
+		c.emitf("cmpl %%eax, %%ecx\n")
+		c.emitf("movl $0, %%eax\n")
+		c.emitf("setle %%al\n")
 	case "||":
-		fmt.Fprintf(asm, "orl %%eax, %%ecx\n")
-		fmt.Fprintf(asm, "movl $0, %%eax\n")
-		fmt.Fprintf(asm, "setne %%al\n")
+		c.emitf("orl %%eax, %%ecx\n")
+		c.emitf("movl $0, %%eax\n")
+		c.emitf("setne %%al\n")
 	case "&&":
-		fmt.Fprintf(asm, "cmpl $0, %%ecx\n")
-		fmt.Fprintf(asm, "setne %%cl\n")
-		fmt.Fprintf(asm, "cmpl $0, %%eax\n")
-		fmt.Fprintf(asm, "movl $0, %%eax\n")
-		fmt.Fprintf(asm, "setne %%al\n")
-		fmt.Fprintf(asm, "andb %%cl, %%al\n")
+		c.emitf("cmpl $0, %%ecx\n")
+		c.emitf("setne %%cl\n")
+		c.emitf("cmpl $0, %%eax\n")
+		c.emitf("movl $0, %%eax\n")
+		c.emitf("setne %%al\n")
+		c.emitf("andb %%cl, %%al\n")
 	default:
 		return fmt.Errorf("invalid binary op: %s", binary)
 	}
 	return nil
 }
 
-func compileBlock(block *ast.Block, asm *strings.Builder) error {
+type Frame struct {
+	NumLocals int
+	Offsets   map[string]int
+}
+
+func newFrame(block *ast.Block) *Frame {
+	frame := &Frame{Offsets: make(map[string]int)}
 	for _, stmt := range block.Statements {
-		if err := compileStmt(stmt, asm); err != nil {
+		if dec, ok := stmt.(*ast.VarDec); ok {
+			frame.NumLocals++
+			frame.Offsets[dec.Name] = frame.NumLocals * 4
+		}
+	}
+	return frame
+}
+
+func (c *Compiler) compileFunction(f *ast.Function) error {
+
+	c.emitf(".globl _%s\n", f.Name)
+	c.emitf("_%s:\n", f.Name)
+	//c.emitf("push %%ebp\n")
+	//c.emitf("movl %%esp, %%ebp\n")
+
+	for _, stmt := range f.Body.Statements {
+		if err := c.compileStmt(stmt); err != nil {
 			return err
 		}
 	}
-	return nil
-}
 
-func compileFunction(f *ast.Function, asm *strings.Builder) error {
-	fmt.Fprintf(asm, ".globl _%s\n", f.Name)
-	fmt.Fprintf(asm, "_%s:\n", f.Name)
-	return compileBlock(f.Body, asm)
+	//c.emitf("movl %%ebp, %%esp\n")
+	//c.emitf("pop %%ebp\n")
+	c.emitf("ret")
+	return nil
 }
