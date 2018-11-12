@@ -21,13 +21,25 @@ func Compile(src string) (string, error) {
 }
 
 type Compiler struct {
-	asm *strings.Builder
+	asm    *strings.Builder
+	frames []*Frame
 }
 
 func New() *Compiler {
 	return &Compiler{
 		asm: &strings.Builder{},
 	}
+}
+
+func (c *Compiler) framePush(frame *Frame) {
+	c.frames = append(c.frames, frame)
+}
+
+func (c *Compiler) framePop() *Frame {
+	l := len(c.frames)
+	f := c.frames[l-1]
+	c.frames = c.frames[:l-1]
+	return f
 }
 
 func (c *Compiler) Assembly() string {
@@ -45,7 +57,6 @@ func (c *Compiler) Compile(p *ast.Program) error {
 	default:
 		return fmt.Errorf("cannot compile: %s", p.Body)
 	}
-	return nil
 }
 
 func (c *Compiler) compileExpr(expr ast.Expr) error {
@@ -155,7 +166,7 @@ type Frame struct {
 	Offsets   map[string]int
 }
 
-func newFrame(block *ast.Block) *Frame {
+func (c *Compiler) newFrame(block *ast.Block) *Frame {
 	frame := &Frame{Offsets: make(map[string]int)}
 	for _, stmt := range block.Statements {
 		if dec, ok := stmt.(*ast.VarDec); ok {
@@ -172,6 +183,10 @@ func (c *Compiler) compileFunction(f *ast.Function) error {
 	c.emitf("_%s:\n", f.Name)
 	//c.emitf("push %%ebp\n")
 	//c.emitf("movl %%esp, %%ebp\n")
+
+	frame := c.newFrame(f.Body)
+	c.framePush(frame)
+	defer c.framePop()
 
 	for _, stmt := range f.Body.Statements {
 		if err := c.compileStmt(stmt); err != nil {
