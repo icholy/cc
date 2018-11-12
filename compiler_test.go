@@ -35,6 +35,11 @@ func TestOutput(t *testing.T) {
 			SrcPath:  "testdata/stage_3/valid/precedence.c",
 			ExitCode: 14,
 		},
+		{
+			Name:     "add",
+			SrcPath:  "testdata/stage_4/valid/or_true.c",
+			ExitCode: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
