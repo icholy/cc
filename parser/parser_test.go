@@ -19,30 +19,25 @@ func TestValidParsing(t *testing.T) {
 	AssertParsingStage(t, 2)
 }
 
+func withRetval(retval ast.Expr) *ast.Program {
+	return &ast.Program{
+		Body: &ast.Function{
+			Name: "main",
+			Body: &ast.Return{
+				Value: retval,
+			},
+		},
+	}
+}
+
 func TestAST(t *testing.T) {
-	AssertEqualAST(t, "../testdata/stage_1/valid/return_2.c", &ast.Program{
-		Body: &ast.Function{
-			Name: "main",
-			Body: &ast.Return{
-				Value: &ast.IntLiteral{
-					Value: 2,
-				},
-			},
+	AssertEqualAST(t, "../testdata/stage_1/valid/return_2.c", withRetval(&ast.IntLiteral{Value: 2}))
+	AssertEqualAST(t, "../testdata/stage_2/valid/neg.c", withRetval(&ast.UnaryOp{
+		Op: "-",
+		Value: &ast.IntLiteral{
+			Value: 5,
 		},
-	})
-	AssertEqualAST(t, "../testdata/stage_2/valid/neg.c", &ast.Program{
-		Body: &ast.Function{
-			Name: "main",
-			Body: &ast.Return{
-				Value: &ast.UnaryOp{
-					Op: "-",
-					Value: &ast.IntLiteral{
-						Value: 5,
-					},
-				},
-			},
-		},
-	})
+	}))
 }
 
 type validityTest struct {
