@@ -25,6 +25,11 @@ func TestOutput(t *testing.T) {
 			SrcPath:  "testdata/stage_1/valid/return_2.c",
 			ExitCode: 2,
 		},
+		{
+			Name:     "bitwise",
+			SrcPath:  "testdata/stage_2/valid/bitwise.c",
+			ExitCode: 0,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {

@@ -52,7 +52,6 @@ func compileUnaryOp(unary *ast.UnaryOp, asm *strings.Builder) error {
 		fmt.Fprintf(asm, "cmpl $0, %%eax\n")
 		fmt.Fprintf(asm, "movl $0, %%eax\n")
 		fmt.Fprintf(asm, "sete %%al\n")
-		// somethin
 	default:
 		return fmt.Errorf("invalid unary op: %s", unary)
 	}
