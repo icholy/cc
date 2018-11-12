@@ -40,6 +40,16 @@ func TestOutput(t *testing.T) {
 			SrcPath:  "testdata/stage_4/valid/or_true.c",
 			ExitCode: 1,
 		},
+		{
+			Name:     "multiple_vars",
+			SrcPath:  "testdata/stage_5/valid/multiple_vars.c",
+			ExitCode: 3,
+		},
+		{
+			Name:     "exp_return_val",
+			SrcPath:  "testdata/stage_5/valid/exp_return_val.c",
+			ExitCode: 0,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
