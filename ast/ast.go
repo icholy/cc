@@ -67,6 +67,10 @@ type Assignment struct {
 	Value Expr
 }
 
+func (a *Assignment) exprNode()          {}
+func (a *Assignment) Token() token.Token { return a.Tok }
+func (a *Assignment) String() string     { return fmt.Sprintf("%s = %s", a.Var, a.Value) }
+
 type VarDec struct {
 	Tok   token.Token
 	Name  string
@@ -144,3 +148,12 @@ func (b *Block) String() string {
 	}
 	return strings.Join(ss, "\n")
 }
+
+type ExprStmt struct {
+	Tok  token.Token
+	Expr Expr
+}
+
+func (e *ExprStmt) stmtNode()          {}
+func (e *ExprStmt) Token() token.Token { return e.Tok }
+func (e *ExprStmt) String() string     { return e.Expr.String() }
