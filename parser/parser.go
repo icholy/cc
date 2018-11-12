@@ -94,28 +94,89 @@ func (p *Parser) parseStmt() (ast.Stmt, error) {
 }
 
 func (p *Parser) parseExpr() (ast.Expr, error) {
-	switch {
-	case p.peek.Is(token.INT_LIT):
-		return p.parseIntLit()
+	expr, err := p.parseTerm()
+	if err != nil {
+		return nil, err
+	}
+	for p.peek.Is(token.PLUS) || p.peek.Is(token.MINUS) {
+		p.next()
+		bin := &ast.BinaryOp{Tok: p.cur, Op: p.cur.Text, Left: expr}
+		right, err := p.parseTerm()
+		if err != nil {
+			return nil, err
+		}
+		bin.Right = right
+		expr = bin
+	}
+	return expr, nil
+}
+
+func (p *Parser) parseTerm() (ast.Expr, error) {
+	term, err := p.parseFactor()
+	if err != nil {
+		return nil, err
+	}
+	for p.peek.Is(token.ASTERISK) || p.peek.Is(token.SLASH) {
+		p.next()
+		bin := &ast.BinaryOp{Tok: p.cur, Op: p.cur.Text, Left: term}
+		right, err := p.parseFactor()
+		if err != nil {
+			return nil, err
+		}
+		bin.Right = right
+		term = bin
+	}
+	return term, nil
+}
+
+func (p *Parser) isUnaryOp(tok token.Token) bool {
+	switch tok.Type {
+	case token.BANG, token.MINUS, token.TILDA:
+		return true
 	default:
-		return p.parseUnaryOp()
+		return false
 	}
 }
 
 func (p *Parser) parseUnaryOp() (ast.Expr, error) {
 	p.next()
-	switch p.cur.Type {
-	case token.BANG, token.MINUS, token.TILDA:
-	default:
+	if !p.isUnaryOp(p.cur) {
 		return nil, fmt.Errorf("invalid unary op: %s", p.cur)
 	}
 	unary := &ast.UnaryOp{Tok: p.cur, Op: p.cur.Text}
-	expr, err := p.parseExpr()
+	expr, err := p.parseFactor()
 	if err != nil {
 		return nil, err
 	}
 	unary.Value = expr
 	return unary, nil
+}
+
+func (p *Parser) parseGrouped() (ast.Expr, error) {
+	if err := p.expectPeek(token.LPAREN); err != nil {
+		return nil, err
+	}
+	expr, err := p.parseExpr()
+	if err != nil {
+		return nil, err
+	}
+	if err := p.expectPeek(token.RPAREN); err != nil {
+		return nil, err
+	}
+	return expr, nil
+}
+
+func (p *Parser) parseFactor() (ast.Expr, error) {
+	switch {
+	case p.peek.Is(token.INT_LIT):
+		return p.parseIntLit()
+	case p.peek.Is(token.LPAREN):
+		return p.parseGrouped()
+	case p.isUnaryOp(p.peek):
+		return p.parseUnaryOp()
+	default:
+		return nil, fmt.Errorf("invalid factor: %s", p.cur)
+	}
 }
 
 func (p *Parser) parseIntLit() (ast.Expr, error) {

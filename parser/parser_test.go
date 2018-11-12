@@ -38,6 +38,13 @@ func TestAST(t *testing.T) {
 			Value: 5,
 		},
 	}))
+	AssertEqualAST(t, "../testdata/stage_3/valid/add.c", withRetval(
+		&ast.BinaryOp{
+			Op:    "+",
+			Left:  &ast.IntLiteral{Value: 1},
+			Right: &ast.IntLiteral{Value: 2},
+		},
+	))
 	AssertEqualAST(t, "../testdata/stage_3/valid/associativity.c", withRetval(
 		&ast.BinaryOp{
 			Op: "-",
@@ -68,13 +75,15 @@ type validityTest struct {
 }
 
 func AssertEqualAST(t *testing.T, srcpath string, expected *ast.Program) {
-	src, err := ioutil.ReadFile(srcpath)
-	assert.NilError(t, err)
-	actual, err := Parse(string(src))
-	assert.NilError(t, err)
-	assert.DeepEqual(t, expected, actual, cmp.Transformer("Token", func(tok token.Token) token.Token {
-		return token.Token{}
-	}))
+	t.Run(srcpath, func(t *testing.T) {
+		src, err := ioutil.ReadFile(srcpath)
+		assert.NilError(t, err)
+		actual, err := Parse(string(src))
+		assert.NilError(t, err)
+		assert.DeepEqual(t, expected, actual, cmp.Transformer("Token", func(tok token.Token) token.Token {
+			return token.Token{}
+		}))
+	})
 }
 
 func AssertParsingStage(t *testing.T, stage int) {
