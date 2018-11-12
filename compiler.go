@@ -31,6 +31,11 @@ func New() *Compiler {
 	}
 }
 
+func (c *Compiler) frame() *Frame {
+	l := len(c.frames)
+	return c.frames[l-1]
+}
+
 func (c *Compiler) framePush(frame *Frame) {
 	c.frames = append(c.frames, frame)
 }
