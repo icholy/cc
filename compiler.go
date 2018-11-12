@@ -100,7 +100,7 @@ func (c *Compiler) compileStmt(stmt ast.Stmt) error {
 		if err := c.compileExpr(stmt.Value); err != nil {
 			return err
 		}
-		c.emitf("ret\n")
+		c.emitf("jmp %s", c.frame().Exit)
 	default:
 		return fmt.Errorf("cannot compile: %s", stmt)
 	}
@@ -167,13 +167,19 @@ func (c *Compiler) compileBinaryOp(binary *ast.BinaryOp) error {
 }
 
 type Frame struct {
+	Entry     string
+	Exit      string
 	NumLocals int
 	Offsets   map[string]int
 }
 
-func (c *Compiler) newFrame(block *ast.Block) *Frame {
-	frame := &Frame{Offsets: make(map[string]int)}
-	for _, stmt := range block.Statements {
+func (c *Compiler) newFrame(f *ast.Function) *Frame {
+	frame := &Frame{
+		Entry:   fmt.Sprintf("_%s", f.Name),
+		Exit:    fmt.Sprintf("_%s_exit", f.Name),
+		Offsets: make(map[string]int),
+	}
+	for _, stmt := range f.Body.Statements {
 		if dec, ok := stmt.(*ast.VarDec); ok {
 			frame.NumLocals++
 			frame.Offsets[dec.Name] = frame.NumLocals * 4
@@ -184,14 +190,14 @@ func (c *Compiler) newFrame(block *ast.Block) *Frame {
 
 func (c *Compiler) compileFunction(f *ast.Function) error {
 
-	c.emitf(".globl _%s\n", f.Name)
-	c.emitf("_%s:\n", f.Name)
-	//c.emitf("push %%ebp\n")
-	//c.emitf("movl %%esp, %%ebp\n")
-
-	frame := c.newFrame(f.Body)
+	frame := c.newFrame(f)
 	c.framePush(frame)
 	defer c.framePop()
+
+	c.emitf(".globl %s", frame.Entry)
+	c.emitf("%s:", frame.Entry)
+	c.emitf("push %%ebp")
+	c.emitf("movl %%esp, %%ebp")
 
 	for _, stmt := range f.Body.Statements {
 		if err := c.compileStmt(stmt); err != nil {
@@ -199,8 +205,9 @@ func (c *Compiler) compileFunction(f *ast.Function) error {
 		}
 	}
 
-	//c.emitf("movl %%ebp, %%esp\n")
-	//c.emitf("pop %%ebp\n")
+	c.emitf("%s:", frame.Exit)
+	c.emitf("movl %%ebp, %%esp")
+	c.emitf("pop %%ebp")
 	c.emitf("ret")
 	return nil
 }
