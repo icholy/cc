@@ -17,6 +17,7 @@ import (
 func TestValidParsing(t *testing.T) {
 	AssertParsingStage(t, 1)
 	AssertParsingStage(t, 2)
+	AssertParsingStage(t, 3)
 }
 
 func withRetval(retval ast.Expr) *ast.Program {
