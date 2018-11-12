@@ -91,6 +91,41 @@ func compileBinaryOp(binary *ast.BinaryOp, asm *strings.Builder) error {
 		fmt.Fprintf(asm, "imul %%ecx, %%eax\n")
 	case "/":
 		fmt.Fprintf(asm, "idiv %%ecx, %%eax\n")
+	case "==":
+		fmt.Fprintf(asm, "cmpl %%eax, %%ecx\n")
+		fmt.Fprintf(asm, "movl $0, %%eax\n")
+		fmt.Fprintf(asm, "sete %%al\n")
+	case "!=":
+		fmt.Fprintf(asm, "cmpl %%eax, %%ecx\n")
+		fmt.Fprintf(asm, "movl $0, %%eax\n")
+		fmt.Fprintf(asm, "setne %%al\n")
+	case ">":
+		fmt.Fprintf(asm, "cmpl %%eax, %%ecx\n")
+		fmt.Fprintf(asm, "movl $0, %%eax\n")
+		fmt.Fprintf(asm, "setg %%al\n")
+	case ">=":
+		fmt.Fprintf(asm, "cmpl %%eax, %%ecx\n")
+		fmt.Fprintf(asm, "movl $0, %%eax\n")
+		fmt.Fprintf(asm, "setge %%al\n")
+	case "<":
+		fmt.Fprintf(asm, "cmpl %%eax, %%ecx\n")
+		fmt.Fprintf(asm, "movl $0, %%eax\n")
+		fmt.Fprintf(asm, "setl %%al\n")
+	case "<=":
+		fmt.Fprintf(asm, "cmpl %%eax, %%ecx\n")
+		fmt.Fprintf(asm, "movl $0, %%eax\n")
+		fmt.Fprintf(asm, "setle %%al\n")
+	case "||":
+		fmt.Fprintf(asm, "orl %%eax, %%ecx\n")
+		fmt.Fprintf(asm, "movl $0, %%eax\n")
+		fmt.Fprintf(asm, "setne %%al\n")
+	case "&&":
+		fmt.Fprintf(asm, "cmpl $0, %%ecx\n")
+		fmt.Fprintf(asm, "setne %%cl\n")
+		fmt.Fprintf(asm, "cmpl $0, %%eax\n")
+		fmt.Fprintf(asm, "movl $0, %%eax\n")
+		fmt.Fprintf(asm, "setne %%al\n")
+		fmt.Fprintf(asm, "andb %%cl, %%al\n")
 	default:
 		return fmt.Errorf("invalid binary op: %s", binary)
 	}
