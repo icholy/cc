@@ -2,6 +2,7 @@ package ast
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/icholy/cc/token"
 )
@@ -97,8 +98,8 @@ func (v *Var) String() string     { return v.Name }
 type If struct {
 	Tok       token.Token
 	Condition Expr
-	Body      Stmt
-	Else      Stmt
+	Body      *Block
+	Else      *Block
 }
 
 func (i *If) stmtNode()          {}
@@ -113,7 +114,7 @@ func (i *If) String() string {
 type Function struct {
 	Tok  token.Token
 	Name string
-	Body Stmt
+	Body *Block
 }
 
 func (f *Function) stmtNode()          {}
@@ -128,3 +129,18 @@ type Return struct {
 func (r *Return) stmtNode()          {}
 func (r *Return) Token() token.Token { return r.Tok }
 func (r *Return) String() string     { return fmt.Sprintf("return %s;", r.Value) }
+
+type Block struct {
+	Tok        token.Token
+	Statements []Stmt
+}
+
+func (b *Block) stmtNode()          {}
+func (b *Block) Token() token.Token { return b.Tok }
+func (b *Block) String() string {
+	ss := make([]string, len(b.Statements))
+	for i, stmt := range b.Statements {
+		ss[i] = stmt.String()
+	}
+	return strings.Join(ss, "\n")
+}

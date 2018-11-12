@@ -25,8 +25,12 @@ func withRetval(retval ast.Expr) *ast.Program {
 	return &ast.Program{
 		Body: &ast.Function{
 			Name: "main",
-			Body: &ast.Return{
-				Value: retval,
+			Body: &ast.Block{
+				Statements: []ast.Stmt{
+					&ast.Return{
+						Value: retval,
+					},
+				},
 			},
 		},
 	}

@@ -57,6 +57,24 @@ func (p *Parser) Parse() (*ast.Program, error) {
 	return prog, nil
 }
 
+func (p *Parser) parseBlock() (*ast.Block, error) {
+	if err := p.expectPeek(token.LBRACE); err != nil {
+		return nil, err
+	}
+	block := &ast.Block{Tok: p.cur}
+	for !p.peekIsOneOf(token.RBRACE, token.EOF) {
+		stmt, err := p.parseStmt()
+		if err != nil {
+			return nil, err
+		}
+		block.Statements = append(block.Statements, stmt)
+	}
+	if err := p.expectPeek(token.RBRACE); err != nil {
+		return nil, err
+	}
+	return block, nil
+}
+
 func (p *Parser) parseFunction() (*ast.Function, error) {
 	if err := p.expectPeek(token.INT_TYPE); err != nil {
 		return nil, err
@@ -72,17 +90,11 @@ func (p *Parser) parseFunction() (*ast.Function, error) {
 	if err := p.expectPeek(token.RPAREN); err != nil {
 		return nil, err
 	}
-	if err := p.expectPeek(token.LBRACE); err != nil {
-		return nil, err
-	}
-	body, err := p.parseStmt()
+	block, err := p.parseBlock()
 	if err != nil {
 		return nil, err
 	}
-	fn.Body = body
-	if err := p.expectPeek(token.RBRACE); err != nil {
-		return nil, err
-	}
+	fn.Body = block
 	return fn, nil
 }
 
