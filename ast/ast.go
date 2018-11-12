@@ -38,7 +38,7 @@ type IntLiteral struct {
 
 func (i *IntLiteral) exprNode()          {}
 func (i *IntLiteral) Token() token.Token { return i.Tok }
-func (i *IntLiteral) String() string     { return fmt.Sprintf("int(%d)", i.Value) }
+func (i *IntLiteral) String() string     { return fmt.Sprintf("IntLiteral(%d)", i.Value) }
 
 type BinaryOp struct {
 	Tok   token.Token
@@ -49,7 +49,7 @@ type BinaryOp struct {
 
 func (b *BinaryOp) exprNode()          {}
 func (b *BinaryOp) Token() token.Token { return b.Tok }
-func (b *BinaryOp) String() string     { return fmt.Sprintf("(%s %s %s)", b.Left, b.Op, b.Right) }
+func (b *BinaryOp) String() string     { return fmt.Sprintf("BinaryOp(%s %s %s)", b.Left, b.Op, b.Right) }
 
 type UnaryOp struct {
 	Tok   token.Token
@@ -59,7 +59,7 @@ type UnaryOp struct {
 
 func (u *UnaryOp) exprNode()          {}
 func (u *UnaryOp) Token() token.Token { return u.Tok }
-func (u *UnaryOp) String() string     { return fmt.Sprintf("(%s %s)", u.Op, u.Value) }
+func (u *UnaryOp) String() string     { return fmt.Sprintf("UnaryOp(%s %s)", u.Op, u.Value) }
 
 type Assignment struct {
 	Tok   token.Token
@@ -69,7 +69,7 @@ type Assignment struct {
 
 func (a *Assignment) exprNode()          {}
 func (a *Assignment) Token() token.Token { return a.Tok }
-func (a *Assignment) String() string     { return fmt.Sprintf("%s = %s", a.Var, a.Value) }
+func (a *Assignment) String() string     { return fmt.Sprintf("Assignment(%s = %s)", a.Var, a.Value) }
 
 type VarDec struct {
 	Tok   token.Token
@@ -81,9 +81,9 @@ func (v *VarDec) stmtNode()          {}
 func (v *VarDec) Token() token.Token { return v.Tok }
 func (v *VarDec) String() string {
 	if v.Value == nil {
-		return fmt.Sprintf("int %s;", v.Name)
+		return fmt.Sprintf("VarDec(%s)", v.Name)
 	}
-	return fmt.Sprintf("int %s = %s;", v.Name, v.Value)
+	return fmt.Sprintf("VarDec(%s = %s)", v.Name, v.Value)
 }
 
 type Var struct {
@@ -106,9 +106,9 @@ func (i *If) stmtNode()          {}
 func (i *If) Token() token.Token { return i.Tok }
 func (i *If) String() string {
 	if i.Else == nil {
-		return fmt.Sprintf("if (%s) { %s }", i.Condition, i.Body)
+		return fmt.Sprintf("IF %s THEN %s", i.Condition, i.Body)
 	}
-	return fmt.Sprintf("if (%s) { %s } else { %s }", i.Condition, i.Body, i.Else)
+	return fmt.Sprintf("IF %s THEN %s ELSE %s", i.Condition, i.Body, i.Else)
 }
 
 type Function struct {
@@ -119,7 +119,7 @@ type Function struct {
 
 func (f *Function) stmtNode()          {}
 func (f *Function) Token() token.Token { return f.Tok }
-func (f *Function) String() string     { return fmt.Sprintf("int %s() { %s }", f.Name, f.Body) }
+func (f *Function) String() string     { return fmt.Sprintf("Function(%s %s)", f.Name, f.Body) }
 
 type Return struct {
 	Tok   token.Token
@@ -128,7 +128,7 @@ type Return struct {
 
 func (r *Return) stmtNode()          {}
 func (r *Return) Token() token.Token { return r.Tok }
-func (r *Return) String() string     { return fmt.Sprintf("return %s;", r.Value) }
+func (r *Return) String() string     { return fmt.Sprintf("Return(%s)", r.Value) }
 
 type Block struct {
 	Tok        token.Token
@@ -142,7 +142,7 @@ func (b *Block) String() string {
 	for i, stmt := range b.Statements {
 		ss[i] = stmt.String()
 	}
-	return strings.Join(ss, "\n")
+	return fmt.Sprintf("Block(%s)", strings.Join(ss, "\n"))
 }
 
 type ExprStmt struct {
@@ -152,4 +152,4 @@ type ExprStmt struct {
 
 func (e *ExprStmt) stmtNode()          {}
 func (e *ExprStmt) Token() token.Token { return e.Tok }
-func (e *ExprStmt) String() string     { return e.Expr.String() }
+func (e *ExprStmt) String() string     { return fmt.Sprintf("ExprStmt(%s)", e.Expr) }

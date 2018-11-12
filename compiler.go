@@ -74,6 +74,8 @@ func (c *Compiler) compileExpr(expr ast.Expr) error {
 		return c.compileBinaryOp(expr)
 	case *ast.Var:
 		return c.compileVar(expr)
+	case *ast.Assignment:
+		return c.compileAssign(expr)
 	default:
 		return fmt.Errorf("cannot compile: %s", expr)
 	}
@@ -102,6 +104,8 @@ func (c *Compiler) compileStmt(stmt ast.Stmt) error {
 		return c.compileReturn(stmt)
 	case *ast.VarDec:
 		return c.compileVarDec(stmt)
+	case *ast.ExprStmt:
+		return c.compileExpr(stmt.Expr)
 	default:
 		return fmt.Errorf("cannot compile: %s", stmt)
 	}

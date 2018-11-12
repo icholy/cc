@@ -54,10 +54,11 @@ func TestOutput(t *testing.T) {
 }
 
 func TestStages(t *testing.T) {
-	AssertValid(t, 1)
-	AssertValid(t, 2)
-	AssertValid(t, 3)
-	AssertValid(t, 4)
+	// AssertValid(t, 1)
+	// AssertValid(t, 2)
+	// AssertValid(t, 3)
+	// AssertValid(t, 4)
+	AssertValid(t, 5)
 }
 
 func AssertValid(t *testing.T, stage int) {
