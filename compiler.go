@@ -47,10 +47,10 @@ func compileUnaryOp(unary *ast.UnaryOp, asm *strings.Builder) error {
 	case "-":
 		fmt.Fprintf(asm, "neg %%eax\n")
 	case "~":
-		fmt.Fprintf(asm, "xor %%eax\n")
+		fmt.Fprintf(asm, "not %%eax\n")
 	case "!":
 		fmt.Fprintf(asm, "cmpl $0, %%eax\n")
-		fmt.Fprintf(asm, "xor %%eax, %%eax\n")
+		fmt.Fprintf(asm, "movl $0, %%eax\n")
 		fmt.Fprintf(asm, "sete %%al\n")
 		// somethin
 	default:
