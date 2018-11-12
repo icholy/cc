@@ -72,6 +72,8 @@ func (c *Compiler) compileExpr(expr ast.Expr) error {
 		return c.compileUnaryOp(expr)
 	case *ast.BinaryOp:
 		return c.compileBinaryOp(expr)
+	case *ast.Var:
+		return c.compileVar(expr)
 	default:
 		return fmt.Errorf("cannot compile: %s", expr)
 	}
@@ -97,13 +99,57 @@ func (c *Compiler) compileUnaryOp(unary *ast.UnaryOp) error {
 func (c *Compiler) compileStmt(stmt ast.Stmt) error {
 	switch stmt := stmt.(type) {
 	case *ast.Return:
-		if err := c.compileExpr(stmt.Value); err != nil {
-			return err
-		}
-		c.emitf("jmp %s", c.frame().Exit)
+		return c.compileReturn(stmt)
+	case *ast.VarDec:
+		return c.compileVarDec(stmt)
 	default:
 		return fmt.Errorf("cannot compile: %s", stmt)
 	}
+	return nil
+}
+
+func (c *Compiler) compileVarDec(dec *ast.VarDec) error {
+	if dec.Value != nil {
+		if err := c.compileExpr(dec.Value); err != nil {
+			return err
+		}
+	} else {
+		c.emitf("movl $0, %%eax")
+	}
+	offset, err := c.frame().Offset(dec.Name)
+	if err != nil {
+		return err
+	}
+	c.emitf("movl %%eax, %d(%%ebp)", offset)
+	return nil
+}
+
+func (c *Compiler) compileAssign(assign *ast.Assignment) error {
+	if err := c.compileExpr(assign.Value); err != nil {
+		return err
+	}
+	offset, err := c.frame().Offset(assign.Var.Name)
+	if err != nil {
+		return err
+	}
+	c.emitf("movl %%eax, %d(%%ebp)", offset)
+	return nil
+}
+
+func (c *Compiler) compileVar(v *ast.Var) error {
+	offset, err := c.frame().Offset(v.Name)
+	if err != nil {
+		return err
+	}
+	c.emitf("movl %d(%%ebp), %%eax", offset)
+	return nil
+}
+
+func (c *Compiler) compileReturn(ret *ast.Return) error {
+	if err := c.compileExpr(ret.Value); err != nil {
+		return err
+	}
+	c.emitf("jmp %s", c.frame().Exit)
 	return nil
 }
 
@@ -173,6 +219,18 @@ type Frame struct {
 	Offsets   map[string]int
 }
 
+func (f *Frame) Offset(name string) (int, error) {
+	off, ok := f.Offsets[name]
+	if !ok {
+		return 0, fmt.Errorf("undefined: %s", name)
+	}
+	return off, nil
+}
+
+func (f *Frame) Size() int {
+	return f.NumLocals * 4
+}
+
 func (c *Compiler) newFrame(f *ast.Function) *Frame {
 	frame := &Frame{
 		Entry:   fmt.Sprintf("_%s", f.Name),
@@ -182,7 +240,7 @@ func (c *Compiler) newFrame(f *ast.Function) *Frame {
 	for _, stmt := range f.Body.Statements {
 		if dec, ok := stmt.(*ast.VarDec); ok {
 			frame.NumLocals++
-			frame.Offsets[dec.Name] = frame.NumLocals * 4
+			frame.Offsets[dec.Name] = frame.NumLocals * -4
 		}
 	}
 	return frame
@@ -198,6 +256,7 @@ func (c *Compiler) compileFunction(f *ast.Function) error {
 	c.emitf("%s:", frame.Entry)
 	c.emitf("push %%ebp")
 	c.emitf("movl %%esp, %%ebp")
+	c.emitf("subl $%d, %%esp", frame.Size())
 
 	for _, stmt := range f.Body.Statements {
 		if err := c.compileStmt(stmt); err != nil {
