@@ -132,8 +132,17 @@ func compileBinaryOp(binary *ast.BinaryOp, asm *strings.Builder) error {
 	return nil
 }
 
+func compileBlock(block *ast.Block, asm *strings.Builder) error {
+	for _, stmt := range block.Statements {
+		if err := compileStmt(stmt, asm); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func compileFunction(f *ast.Function, asm *strings.Builder) error {
 	fmt.Fprintf(asm, ".globl _%s\n", f.Name)
 	fmt.Fprintf(asm, "_%s:\n", f.Name)
-	return compileStmt(f.Body, asm)
+	return compileBlock(f.Body, asm)
 }
