@@ -6,6 +6,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
+	"github.com/icholy/cc/ast"
+	"github.com/icholy/cc/token"
+
 	"gotest.tools/assert"
 )
 
@@ -14,9 +19,32 @@ func TestValidParsing(t *testing.T) {
 	AssertParsingStage(t, 2)
 }
 
+func TestAST(t *testing.T) {
+	AssertEqualAST(t, "../testdata/stage_1/valid/return_2.c", &ast.Program{
+		Body: &ast.Function{
+			Name: "main",
+			Body: &ast.Return{
+				Value: &ast.IntLiteral{
+					Value: 2,
+				},
+			},
+		},
+	})
+}
+
 type validityTest struct {
 	SrcPath string
 	Valid   bool
+}
+
+func AssertEqualAST(t *testing.T, srcpath string, expected *ast.Program) {
+	src, err := ioutil.ReadFile(srcpath)
+	assert.NilError(t, err)
+	actual, err := Parse(string(src))
+	assert.NilError(t, err)
+	assert.DeepEqual(t, expected, actual, cmp.Transformer("Token", func(tok token.Token) token.Token {
+		return token.Token{}
+	}))
 }
 
 func AssertParsingStage(t *testing.T, stage int) {
