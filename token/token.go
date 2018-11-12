@@ -58,6 +58,7 @@ const (
 	LT_EQ     = "LT_EQ"
 	GT        = "GT"
 	GT_EQ     = "GT_EQ"
+	ASSIGN    = "ASSIGN"
 )
 
 var Keywords = map[string]TokenType{

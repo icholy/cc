@@ -78,6 +78,7 @@ var bytetokens = map[byte]token.TokenType{
 	'!': token.BANG,
 	'>': token.GT,
 	'<': token.LT,
+	'=': token.ASSIGN,
 }
 
 var twobytetokens = map[string]token.TokenType{
