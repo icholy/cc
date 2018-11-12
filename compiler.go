@@ -268,6 +268,7 @@ func (c *Compiler) compileFunction(f *ast.Function) error {
 		}
 	}
 
+	c.emitf("movl $0, %%eax")
 	c.emitf("%s:", frame.Exit)
 	c.emitf("movl %%ebp, %%esp")
 	c.emitf("pop %%ebp")
