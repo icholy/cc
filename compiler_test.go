@@ -30,6 +30,11 @@ func TestOutput(t *testing.T) {
 			SrcPath:  "testdata/stage_2/valid/bitwise.c",
 			ExitCode: 0,
 		},
+		{
+			Name:     "add",
+			SrcPath:  "testdata/stage_3/valid/precedence.c",
+			ExitCode: 14,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
@@ -46,6 +51,7 @@ func TestOutput(t *testing.T) {
 func TestStages(t *testing.T) {
 	AssertValid(t, 1)
 	AssertValid(t, 2)
+	AssertValid(t, 3)
 }
 
 func AssertValid(t *testing.T, stage int) {

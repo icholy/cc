@@ -30,12 +30,14 @@ func compileProgram(p *ast.Program, asm *strings.Builder) error {
 	return nil
 }
 
-func compilerExpr(expr ast.Expr, asm *strings.Builder) error {
+func compileExpr(expr ast.Expr, asm *strings.Builder) error {
 	switch expr := expr.(type) {
 	case *ast.IntLiteral:
 		fmt.Fprintf(asm, "movl $%d, %%eax\n", expr.Value)
 	case *ast.UnaryOp:
 		return compileUnaryOp(expr, asm)
+	case *ast.BinaryOp:
+		return compileBinaryOp(expr, asm)
 	default:
 		return fmt.Errorf("cannot compile: %s", expr)
 	}
@@ -61,12 +63,36 @@ func compileUnaryOp(unary *ast.UnaryOp, asm *strings.Builder) error {
 func compileStmt(stmt ast.Stmt, asm *strings.Builder) error {
 	switch stmt := stmt.(type) {
 	case *ast.Return:
-		if err := compilerExpr(stmt.Value, asm); err != nil {
+		if err := compileExpr(stmt.Value, asm); err != nil {
 			return err
 		}
 		fmt.Fprintf(asm, "ret\n")
 	default:
 		return fmt.Errorf("cannot compile: %s", stmt)
+	}
+	return nil
+}
+
+func compileBinaryOp(binary *ast.BinaryOp, asm *strings.Builder) error {
+	if err := compileExpr(binary.Left, asm); err != nil {
+		return err
+	}
+	fmt.Fprintf(asm, "push %%eax\n")
+	if err := compileExpr(binary.Right, asm); err != nil {
+		return err
+	}
+	fmt.Fprintf(asm, "pop %%ecx\n")
+	switch binary.Op {
+	case "+":
+		fmt.Fprintf(asm, "add %%ecx, %%eax\n")
+	case "-":
+		fmt.Fprintf(asm, "sub %%ecx, %%eax\n")
+	case "*":
+		fmt.Fprintf(asm, "imul %%ecx, %%eax\n")
+	case "/":
+		fmt.Fprintf(asm, "idiv %%ecx, %%eax\n")
+	default:
+		return fmt.Errorf("invalid binary op: %s", binary)
 	}
 	return nil
 }
