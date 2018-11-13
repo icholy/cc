@@ -151,6 +151,8 @@ func (c *Compiler) stmt(stmt ast.Stmt) error {
 		return c.varDec(stmt)
 	case *ast.If:
 		return c._if(stmt)
+	case *ast.Block:
+		return c.block(stmt)
 	case *ast.ExprStmt:
 		return c.expr(stmt.Expr)
 	default:

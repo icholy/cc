@@ -85,6 +85,7 @@ func TestStages(t *testing.T) {
 	AssertValid(t, 4)
 	AssertValid(t, 5)
 	AssertValid(t, 6)
+	AssertValid(t, 7)
 }
 
 func AssertValid(t *testing.T, stage int) {

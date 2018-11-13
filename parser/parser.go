@@ -53,10 +53,14 @@ func (p *Parser) Parse() (*ast.Program, error) {
 		return nil, err
 	}
 	prog.Body = fn
+	if err := p.expect(token.EOF); err != nil {
+		return nil, err
+	}
 	return prog, nil
 }
 
 func (p *Parser) blockStmt() (ast.Stmt, error) {
+	p.trace("BlockStmt")
 	switch {
 	case p.cur.Is(token.INT_TYPE):
 		return p.varDec()
@@ -115,6 +119,8 @@ func (p *Parser) trace(s string) {
 func (p *Parser) stmt() (ast.Stmt, error) {
 	p.trace("Stmt")
 	switch {
+	case p.cur.Is(token.LBRACE):
+		return p.block()
 	case p.cur.Is(token.IF):
 		return p._if()
 	case p.cur.Is(token.RETURN):
@@ -180,6 +186,7 @@ func (p *Parser) ret() (*ast.Ret, error) {
 }
 
 func (p *Parser) _if() (*ast.If, error) {
+	p.trace("If")
 	stmt := &ast.If{Tok: p.cur}
 	if err := p.expect(token.IF); err != nil {
 		return nil, err

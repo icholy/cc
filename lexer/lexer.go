@@ -197,6 +197,9 @@ func (l *Lexer) Context(tok token.Token) string {
 		col = 0
 	}
 	lines := strings.Split(l.input, "\n")
+	if tok.Pos.Line > len(lines) {
+		return fmt.Sprintf("want %s, but only have %d lines", tok.Pos, len(lines))
+	}
 	return fmt.Sprintf("%s\n%s\n%s^\n%s",
 		strings.Join(lines[:tok.Pos.Line-1], "\n"),
 		lines[tok.Pos.Line-1],
