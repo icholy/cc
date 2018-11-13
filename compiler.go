@@ -31,6 +31,46 @@ func New() *Compiler {
 	}
 }
 
+type Frame struct {
+	NumLabels int
+	Entry     string
+	Exit      string
+	NumLocals int
+	Offsets   map[string]int
+}
+
+func (f *Frame) Offset(name string) (int, error) {
+	off, ok := f.Offsets[name]
+	if !ok {
+		return 0, fmt.Errorf("undefined: %s", name)
+	}
+	return off, nil
+}
+
+func (f *Frame) Label() string {
+	f.NumLabels++
+	return fmt.Sprintf("_%s_l%d", f.Entry, f.NumLabels)
+}
+
+func (f *Frame) Size() int {
+	return f.NumLocals * 4
+}
+
+func (c *Compiler) newFrame(f *ast.FuncDec) *Frame {
+	frame := &Frame{
+		Entry:   fmt.Sprintf("_%s", f.Name),
+		Exit:    fmt.Sprintf("_%s_exit", f.Name),
+		Offsets: make(map[string]int),
+	}
+	for _, stmt := range f.Body.Statements {
+		if dec, ok := stmt.(*ast.VarDec); ok {
+			frame.NumLocals++
+			frame.Offsets[dec.Name] = frame.NumLocals * -4
+		}
+	}
+	return frame
+}
+
 func (c *Compiler) frame() *Frame {
 	l := len(c.frames)
 	return c.frames[l-1]
@@ -258,46 +298,6 @@ func (c *Compiler) binaryOp(binary *ast.BinaryOp) error {
 		return fmt.Errorf("invalid binary op: %s", binary)
 	}
 	return nil
-}
-
-type Frame struct {
-	NumLabels int
-	Entry     string
-	Exit      string
-	NumLocals int
-	Offsets   map[string]int
-}
-
-func (f *Frame) Offset(name string) (int, error) {
-	off, ok := f.Offsets[name]
-	if !ok {
-		return 0, fmt.Errorf("undefined: %s", name)
-	}
-	return off, nil
-}
-
-func (f *Frame) Label() string {
-	f.NumLabels++
-	return fmt.Sprintf("_%s_l%d", f.Entry, f.NumLabels)
-}
-
-func (f *Frame) Size() int {
-	return f.NumLocals * 4
-}
-
-func (c *Compiler) newFrame(f *ast.FuncDec) *Frame {
-	frame := &Frame{
-		Entry:   fmt.Sprintf("_%s", f.Name),
-		Exit:    fmt.Sprintf("_%s_exit", f.Name),
-		Offsets: make(map[string]int),
-	}
-	for _, stmt := range f.Body.Statements {
-		if dec, ok := stmt.(*ast.VarDec); ok {
-			frame.NumLocals++
-			frame.Offsets[dec.Name] = frame.NumLocals * -4
-		}
-	}
-	return frame
 }
 
 func (c *Compiler) funcDec(f *ast.FuncDec) error {
