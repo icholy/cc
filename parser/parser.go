@@ -20,7 +20,7 @@ func Parse(input string) (*ast.Program, error) {
 	p := New(l)
 	prog, err := p.Parse()
 	if err != nil {
-		return nil, fmt.Errorf("%s:\n%s", err, l.Context(0))
+		return nil, fmt.Errorf("%s:\n%s", err, l.Context(p.cur))
 	}
 	return prog, nil
 }
@@ -209,38 +209,9 @@ func (p *Parser) _if() (*ast.If, error) {
 	return stmt, nil
 }
 
-func (p *Parser) ternary() (*ast.Ternary, error) {
-	expr := &ast.Ternary{Tok: p.cur}
-	var err error
-	expr.Condition, err = p.expr()
-	if err != nil {
-		return nil, err
-	}
-	if err := p.expect(token.QUESTION); err != nil {
-		return nil, err
-	}
-	expr.Then, err = p.expr()
-	if err != nil {
-		return nil, err
-	}
-	if err := p.expect(token.COLON); err != nil {
-		return nil, err
-	}
-	expr.Else, err = p.expr()
-	if err != nil {
-		return nil, err
-	}
-	return expr, nil
-}
-
 func (p *Parser) expr() (ast.Expr, error) {
 	p.trace("Expr")
-	switch {
-	case p.cur.Is(token.IDENT) && p.peek.Is(token.ASSIGN):
-		return p.assignment()
-	default:
-		return p.or()
-	}
+	return p.assign()
 }
 
 func (p *Parser) variable() (*ast.Var, error) {
@@ -252,21 +223,66 @@ func (p *Parser) variable() (*ast.Var, error) {
 	return v, nil
 }
 
-func (p *Parser) assignment() (*ast.Assign, error) {
+func (p *Parser) assign() (ast.Expr, error) {
 	p.trace("Assignment")
-	v, err := p.variable()
+	expr, err := p.ternary()
 	if err != nil {
 		return nil, err
 	}
-	expr := &ast.Assign{Tok: p.cur, Var: v}
-	if err := p.expect(token.ASSIGN); err != nil {
-		return nil, err
+	if !p.cur.Is(token.ASSIGN) {
+		return expr, nil
 	}
-	value, err := p.expr()
+
+	assign := &ast.Assign{Tok: p.cur}
+	p.next()
+	v, ok := expr.(*ast.Var)
+	if !ok {
+		return nil, fmt.Errorf("cannot assign to: %s", expr)
+	}
+	assign.Var = v
+	assign.Value, err = p.expr()
+	return assign, nil
+}
+
+func (p *Parser) ternary() (ast.Expr, error) {
+	expr, err := p.or()
 	if err != nil {
 		return nil, err
 	}
-	expr.Value = value
+	if !p.cur.Is(token.QUESTION) {
+		return expr, nil
+	}
+	tern := &ast.Ternary{Tok: p.cur, Condition: expr}
+	p.next()
+	tern.Then, err = p.expr()
+	if err != nil {
+		return nil, err
+	}
+	if err := p.expect(token.COLON); err != nil {
+		return nil, err
+	}
+	tern.Else, err = p.ternary()
+	if err != nil {
+		return nil, err
+	}
+	return tern, nil
+}
+
+func (p *Parser) binary(parse func() (ast.Expr, error), types ...token.TokenType) (ast.Expr, error) {
+	expr, err := parse()
+	if err != nil {
+		return nil, err
+	}
+	for p.cur.OneOf(types...) {
+		bin := &ast.BinaryOp{Tok: p.cur, Op: p.cur.Text, Left: expr}
+		p.next()
+		right, err := parse()
+		if err != nil {
+			return nil, err
+		}
+		bin.Right = right
+		expr = bin
+	}
 	return expr, nil
 }
 
@@ -308,24 +324,6 @@ func (p *Parser) factor() (ast.Expr, error) {
 	default:
 		return nil, fmt.Errorf("invalid factor: %s", p.cur)
 	}
-}
-
-func (p *Parser) binary(parse func() (ast.Expr, error), types ...token.TokenType) (ast.Expr, error) {
-	expr, err := parse()
-	if err != nil {
-		return nil, err
-	}
-	for p.cur.OneOf(types...) {
-		bin := &ast.BinaryOp{Tok: p.cur, Op: p.cur.Text, Left: expr}
-		p.next()
-		right, err := parse()
-		if err != nil {
-			return nil, err
-		}
-		bin.Right = right
-		expr = bin
-	}
-	return expr, nil
 }
 
 func (p *Parser) isUnaryOp(tok token.Token) bool {
