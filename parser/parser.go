@@ -130,7 +130,7 @@ func (p *Parser) trace(s string) {
 }
 
 func (p *Parser) parseStmt() (ast.Stmt, error) {
-	p.trace("parseStmt")
+	p.trace("stmt")
 	switch {
 	case p.cur.Is(token.INT_TYPE):
 		return p.parseVarDec()
@@ -142,6 +142,7 @@ func (p *Parser) parseStmt() (ast.Stmt, error) {
 }
 
 func (p *Parser) parseVarDec() (ast.Stmt, error) {
+	p.trace("vardec")
 	decl := &ast.VarDec{Tok: p.peek}
 	if err := p.expect(token.INT_TYPE); err != nil {
 		return nil, err
@@ -165,6 +166,7 @@ func (p *Parser) parseVarDec() (ast.Stmt, error) {
 }
 
 func (p *Parser) parseExprStmt() (ast.Stmt, error) {
+	p.trace("ExprStmt")
 	stmt := &ast.ExprStmt{Tok: p.cur}
 	expr, err := p.parseExpr()
 	if err != nil {
@@ -178,7 +180,7 @@ func (p *Parser) parseExprStmt() (ast.Stmt, error) {
 }
 
 func (p *Parser) parseReturn() (ast.Stmt, error) {
-	p.trace("parseReturn")
+	p.trace("Return")
 	ret := &ast.Return{Tok: p.cur}
 	if err := p.expect(token.RETURN); err != nil {
 		return nil, err
@@ -195,6 +197,7 @@ func (p *Parser) parseReturn() (ast.Stmt, error) {
 }
 
 func (p *Parser) parseExpr() (ast.Expr, error) {
+	p.trace("Expr")
 	switch {
 	case p.cur.Is(token.IDENT) && p.peek.Is(token.ASSIGN):
 		return p.parseAssign()
@@ -204,6 +207,7 @@ func (p *Parser) parseExpr() (ast.Expr, error) {
 }
 
 func (p *Parser) parseVar() (*ast.Var, error) {
+	p.trace("Var")
 	if err := p.expect(token.IDENT); err != nil {
 		return nil, err
 	}
@@ -211,6 +215,7 @@ func (p *Parser) parseVar() (*ast.Var, error) {
 }
 
 func (p *Parser) parseAssign() (ast.Expr, error) {
+	p.trace("Assignment")
 	v, err := p.parseVar()
 	if err != nil {
 		return nil, err
@@ -252,7 +257,7 @@ func (p *Parser) parseTerm() (ast.Expr, error) {
 }
 
 func (p *Parser) parseFactor() (ast.Expr, error) {
-	p.trace("parseFactor")
+	p.trace("factor")
 	switch {
 	case p.cur.Is(token.IDENT):
 		return p.parseVar()
@@ -295,6 +300,7 @@ func (p *Parser) isUnaryOp(tok token.Token) bool {
 }
 
 func (p *Parser) parseUnaryOp() (ast.Expr, error) {
+	p.trace("UnaryOp")
 	if !p.isUnaryOp(p.cur) {
 		return nil, fmt.Errorf("invalid unary op: %s", p.cur)
 	}
@@ -309,6 +315,7 @@ func (p *Parser) parseUnaryOp() (ast.Expr, error) {
 }
 
 func (p *Parser) parseGrouped() (ast.Expr, error) {
+	p.trace("Grouped")
 	if err := p.expect(token.LPAREN); err != nil {
 		return nil, err
 	}
@@ -323,6 +330,7 @@ func (p *Parser) parseGrouped() (ast.Expr, error) {
 }
 
 func (p *Parser) parseIntLit() (ast.Expr, error) {
+	p.trace("IntLit")
 	lit := &ast.IntLiteral{Tok: p.cur}
 	value, err := strconv.Atoi(p.cur.Text)
 	if err != nil {
