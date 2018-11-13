@@ -37,32 +37,47 @@ type Local struct {
 	Offset   int
 }
 
+type Scope struct {
+	Parent *Scope
+	Offset int
+	Locals map[string]*Local
+}
+
+func (s *Scope) Local(name string) (*Local, error) {
+	if loc, ok := s.Locals[name]; ok {
+		return loc, nil
+	}
+	if s.Parent != nil {
+		return s.Parent.Local(name)
+	}
+	return nil, fmt.Errorf("undefined: %s", name)
+}
+
+func (s *Scope) ParentOffset() int {
+	if s.Parent == nil {
+		return 0
+	}
+	return s.Parent.Offset
+}
+
+func (s *Scope) AddVarDec(d *ast.VarDec) {
+	s.Offset -= 4
+	s.Locals[d.Name] = &Local{
+		Name:     d.Name,
+		Offset:   s.ParentOffset() + s.Offset,
+		Declared: false,
+	}
+}
+
 type Frame struct {
 	NumLabels int
 	Entry     string
 	Exit      string
-	Offset    int
-	Locals    map[string]*Local
+	Scope     *Scope
 }
 
 func (f *Frame) Local(name string) (*Local, error) {
-	loc, ok := f.Locals[name]
-	if !ok {
-		return nil, fmt.Errorf("undefined: %s", name)
-	}
-	if !loc.Declared {
-		return nil, fmt.Errorf("used before declaration: %s", name)
-	}
-	return loc, nil
-}
-
-func (f *Frame) Declare(name string) error {
-	loc, ok := f.Locals[name]
-	if !ok {
-		return fmt.Errorf("undefined: %s", name)
-	}
-	loc.Declared = true
-	return nil
+	return f.Scope.Local(name)
 }
 
 func (f *Frame) Label() string {
@@ -72,18 +87,15 @@ func (f *Frame) Label() string {
 
 func (c *Compiler) newFrame(f *ast.FuncDec) *Frame {
 	frame := &Frame{
-		Entry:  fmt.Sprintf("_%s", f.Name),
-		Exit:   fmt.Sprintf("_%s_exit", f.Name),
-		Locals: make(map[string]*Local),
+		Entry: fmt.Sprintf("_%s", f.Name),
+		Exit:  fmt.Sprintf("_%s_exit", f.Name),
+		Scope: &Scope{
+			Locals: make(map[string]*Local),
+		},
 	}
 	for _, stmt := range f.Body.Statements {
 		if dec, ok := stmt.(*ast.VarDec); ok {
-			frame.Offset -= 4
-			frame.Locals[dec.Name] = &Local{
-				Name:     dec.Name,
-				Offset:   frame.Offset,
-				Declared: false,
-			}
+			frame.Scope.AddVarDec(dec)
 		}
 	}
 	return frame
@@ -171,7 +183,6 @@ func (c *Compiler) stmt(stmt ast.Stmt) error {
 	default:
 		return fmt.Errorf("cannot compile: %s", stmt)
 	}
-	return nil
 }
 
 func (c *Compiler) varDec(dec *ast.VarDec) error {
@@ -182,13 +193,11 @@ func (c *Compiler) varDec(dec *ast.VarDec) error {
 	} else {
 		c.emitf("movl $0, %%eax")
 	}
-	if err := c.frame().Declare(dec.Name); err != nil {
-		return err
-	}
 	loc, err := c.frame().Local(dec.Name)
 	if err != nil {
 		return err
 	}
+	loc.Declared = true
 	c.emitf("movl %%eax, %d(%%ebp)", loc.Offset)
 	return nil
 }
@@ -250,6 +259,9 @@ func (c *Compiler) variable(v *ast.Var) error {
 	if err != nil {
 		return err
 	}
+	if !loc.Declared {
+		return fmt.Errorf("use before declaration: %s", v.Name)
+	}
 	c.emitf("movl %d(%%ebp), %%eax", loc.Offset)
 	return nil
 }
@@ -258,7 +270,7 @@ func (c *Compiler) ret(ret *ast.Ret) error {
 	if err := c.expr(ret.Value); err != nil {
 		return err
 	}
-	c.emitf("jmp %s", c.frame().Exit)
+	c.prologue()
 	return nil
 }
 
@@ -321,17 +333,27 @@ func (c *Compiler) binaryOp(binary *ast.BinaryOp) error {
 	return nil
 }
 
+func (c *Compiler) preable(name string) {
+	c.emitf(".globl %s", name)
+	c.emitf("%s:", name)
+	c.emitf("push %%ebp")
+	c.emitf("movl %%esp, %%ebp")
+}
+
+func (c *Compiler) prologue() {
+	c.emitf("movl %%ebp, %%esp")
+	c.emitf("pop %%ebp")
+	c.emitf("ret")
+}
+
 func (c *Compiler) funcDec(f *ast.FuncDec) error {
 
 	frame := c.newFrame(f)
 	c.framePush(frame)
 	defer c.framePop()
 
-	c.emitf(".globl %s", frame.Entry)
-	c.emitf("%s:", frame.Entry)
-	c.emitf("push %%ebp")
-	c.emitf("movl %%esp, %%ebp")
-	c.emitf("subl $%d, %%esp", -frame.Offset)
+	c.preable(frame.Entry)
+	c.emitf("subl $%d, %%esp", -frame.Scope.Offset)
 
 	for _, stmt := range f.Body.Statements {
 		if err := c.stmt(stmt); err != nil {
@@ -341,8 +363,6 @@ func (c *Compiler) funcDec(f *ast.FuncDec) error {
 
 	c.emitf("movl $0, %%eax")
 	c.emitf("%s:", frame.Exit)
-	c.emitf("movl %%ebp, %%esp")
-	c.emitf("pop %%ebp")
-	c.emitf("ret")
+	c.prologue()
 	return nil
 }
