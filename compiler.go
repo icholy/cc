@@ -75,7 +75,9 @@ func (c *Compiler) expr(expr ast.Expr) error {
 	case *ast.Var:
 		return c.variable(expr)
 	case *ast.Assign:
-		return c.compileAssign(expr)
+		return c.assign(expr)
+	case *ast.Ternary:
+		return c.ternary(expr)
 	default:
 		return fmt.Errorf("cannot compile: %s", expr)
 	}
@@ -104,6 +106,8 @@ func (c *Compiler) stmt(stmt ast.Stmt) error {
 		return c.ret(stmt)
 	case *ast.VarDec:
 		return c.varDec(stmt)
+	case *ast.If:
+		return c._if(stmt)
 	case *ast.ExprStmt:
 		return c.expr(stmt.Expr)
 	default:
@@ -128,7 +132,47 @@ func (c *Compiler) varDec(dec *ast.VarDec) error {
 	return nil
 }
 
-func (c *Compiler) compileAssign(assign *ast.Assign) error {
+func (c *Compiler) ternary(tern *ast.Ternary) error {
+	afterThen, end := c.frame().Label(), c.frame().Label()
+	if err := c.expr(tern.Condition); err != nil {
+		return err
+	}
+	c.emitf("cmpl $0, %%eax")
+	c.emitf("je %s", afterThen)
+	if err := c.expr(tern.Then); err != nil {
+		return err
+	}
+	c.emitf("jmp %s", end)
+	c.emitf("%s:", afterThen)
+	if err := c.expr(tern.Else); err != nil {
+		return err
+	}
+	c.emitf("%s:", end)
+	return nil
+}
+
+func (c *Compiler) _if(ife *ast.If) error {
+	afterThen, end := c.frame().Label(), c.frame().Label()
+	if err := c.expr(ife.Condition); err != nil {
+		return err
+	}
+	c.emitf("cmpl $0, %%eax")
+	c.emitf("je %s", afterThen)
+	if err := c.stmt(ife.Then); err != nil {
+		return err
+	}
+	c.emitf("jmp %s", end)
+	c.emitf("%s:", afterThen)
+	if ife.Else != nil {
+		if err := c.stmt(ife.Else); err != nil {
+			return err
+		}
+	}
+	c.emitf("%s:", end)
+	return nil
+}
+
+func (c *Compiler) assign(assign *ast.Assign) error {
 	if err := c.expr(assign.Value); err != nil {
 		return err
 	}
@@ -217,6 +261,7 @@ func (c *Compiler) binaryOp(binary *ast.BinaryOp) error {
 }
 
 type Frame struct {
+	NumLabels int
 	Entry     string
 	Exit      string
 	NumLocals int
@@ -229,6 +274,11 @@ func (f *Frame) Offset(name string) (int, error) {
 		return 0, fmt.Errorf("undefined: %s", name)
 	}
 	return off, nil
+}
+
+func (f *Frame) Label() string {
+	f.NumLabels++
+	return fmt.Sprintf("_%s_l%d", f.Entry, f.NumLabels)
 }
 
 func (f *Frame) Size() int {
