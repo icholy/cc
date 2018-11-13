@@ -8,3 +8,4 @@
 * Finished [Stage 4](https://norasandler.com/2017/12/28/Write-a-Compiler-4.html): 2018-11-11 21:24:39
 * Finished [Stage 5](https://norasandler.com/2018/01/08/Write-a-Compiler-5.html): 2018-11-11 23:55:56
 * Finished [Stage 6](https://norasandler.com/2018/02/25/Write-a-Compiler-6.html): 2018-11-12 22:52:04
+* Finished [Stage 7](https://norasandler.com/2018/03/14/Write-a-Compiler-7.html): 2018-11-13 00:56:38
