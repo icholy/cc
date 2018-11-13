@@ -41,19 +41,19 @@ type Frame struct {
 	NumLabels int
 	Entry     string
 	Exit      string
-	NumLocals int
+	Offset    int
 	Locals    map[string]*Local
 }
 
-func (f *Frame) Offset(name string) (int, error) {
+func (f *Frame) Local(name string) (*Local, error) {
 	loc, ok := f.Locals[name]
 	if !ok {
-		return 0, fmt.Errorf("undefined: %s", name)
+		return nil, fmt.Errorf("undefined: %s", name)
 	}
 	if !loc.Declared {
-		return 0, fmt.Errorf("used before declaration: %s", name)
+		return nil, fmt.Errorf("used before declaration: %s", name)
 	}
-	return loc.Offset, nil
+	return loc, nil
 }
 
 func (f *Frame) Declare(name string) error {
@@ -70,10 +70,6 @@ func (f *Frame) Label() string {
 	return fmt.Sprintf("_%s_l%d", f.Entry, f.NumLabels)
 }
 
-func (f *Frame) Size() int {
-	return f.NumLocals * 4
-}
-
 func (c *Compiler) newFrame(f *ast.FuncDec) *Frame {
 	frame := &Frame{
 		Entry:  fmt.Sprintf("_%s", f.Name),
@@ -82,10 +78,10 @@ func (c *Compiler) newFrame(f *ast.FuncDec) *Frame {
 	}
 	for _, stmt := range f.Body.Statements {
 		if dec, ok := stmt.(*ast.VarDec); ok {
-			frame.NumLocals++
+			frame.Offset -= 4
 			frame.Locals[dec.Name] = &Local{
 				Name:     dec.Name,
-				Offset:   frame.NumLocals * -4,
+				Offset:   frame.Offset,
 				Declared: false,
 			}
 		}
@@ -189,11 +185,11 @@ func (c *Compiler) varDec(dec *ast.VarDec) error {
 	if err := c.frame().Declare(dec.Name); err != nil {
 		return err
 	}
-	offset, err := c.frame().Offset(dec.Name)
+	loc, err := c.frame().Local(dec.Name)
 	if err != nil {
 		return err
 	}
-	c.emitf("movl %%eax, %d(%%ebp)", offset)
+	c.emitf("movl %%eax, %d(%%ebp)", loc.Offset)
 	return nil
 }
 
@@ -241,20 +237,20 @@ func (c *Compiler) assign(assign *ast.Assign) error {
 	if err := c.expr(assign.Value); err != nil {
 		return err
 	}
-	offset, err := c.frame().Offset(assign.Var.Name)
+	loc, err := c.frame().Local(assign.Var.Name)
 	if err != nil {
 		return err
 	}
-	c.emitf("movl %%eax, %d(%%ebp)", offset)
+	c.emitf("movl %%eax, %d(%%ebp)", loc.Offset)
 	return nil
 }
 
 func (c *Compiler) variable(v *ast.Var) error {
-	offset, err := c.frame().Offset(v.Name)
+	loc, err := c.frame().Local(v.Name)
 	if err != nil {
 		return err
 	}
-	c.emitf("movl %d(%%ebp), %%eax", offset)
+	c.emitf("movl %d(%%ebp), %%eax", loc.Offset)
 	return nil
 }
 
@@ -335,7 +331,7 @@ func (c *Compiler) funcDec(f *ast.FuncDec) error {
 	c.emitf("%s:", frame.Entry)
 	c.emitf("push %%ebp")
 	c.emitf("movl %%esp, %%ebp")
-	c.emitf("subl $%d, %%esp", frame.Size())
+	c.emitf("subl $%d, %%esp", -frame.Offset)
 
 	for _, stmt := range f.Body.Statements {
 		if err := c.stmt(stmt); err != nil {
