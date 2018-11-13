@@ -31,14 +31,14 @@ func (p *Program) stmtNode()          {}
 func (p *Program) Token() token.Token { return p.Tok }
 func (p *Program) String() string     { return p.Body.String() }
 
-type IntLiteral struct {
+type IntLit struct {
 	Tok   token.Token
 	Value int
 }
 
-func (i *IntLiteral) exprNode()          {}
-func (i *IntLiteral) Token() token.Token { return i.Tok }
-func (i *IntLiteral) String() string     { return fmt.Sprintf("IntLiteral(%d)", i.Value) }
+func (i *IntLit) exprNode()          {}
+func (i *IntLit) Token() token.Token { return i.Tok }
+func (i *IntLit) String() string     { return fmt.Sprintf("IntLit(%d)", i.Value) }
 
 type BinaryOp struct {
 	Tok   token.Token
@@ -61,15 +61,15 @@ func (u *UnaryOp) exprNode()          {}
 func (u *UnaryOp) Token() token.Token { return u.Tok }
 func (u *UnaryOp) String() string     { return fmt.Sprintf("UnaryOp(%s %s)", u.Op, u.Value) }
 
-type Assignment struct {
+type Assign struct {
 	Tok   token.Token
 	Var   *Var
 	Value Expr
 }
 
-func (a *Assignment) exprNode()          {}
-func (a *Assignment) Token() token.Token { return a.Tok }
-func (a *Assignment) String() string     { return fmt.Sprintf("Assignment(%s = %s)", a.Var, a.Value) }
+func (a *Assign) exprNode()          {}
+func (a *Assign) Token() token.Token { return a.Tok }
+func (a *Assign) String() string     { return fmt.Sprintf("Assign(%s = %s)", a.Var, a.Value) }
 
 type VarDec struct {
 	Tok   token.Token
@@ -111,24 +111,24 @@ func (i *If) String() string {
 	return fmt.Sprintf("IF %s THEN %s ELSE %s", i.Condition, i.Body, i.Else)
 }
 
-type Function struct {
+type FuncDec struct {
 	Tok  token.Token
 	Name string
 	Body *Block
 }
 
-func (f *Function) stmtNode()          {}
-func (f *Function) Token() token.Token { return f.Tok }
-func (f *Function) String() string     { return fmt.Sprintf("Function(%s %s)", f.Name, f.Body) }
+func (f *FuncDec) stmtNode()          {}
+func (f *FuncDec) Token() token.Token { return f.Tok }
+func (f *FuncDec) String() string     { return fmt.Sprintf("FuncDec(%s %s)", f.Name, f.Body) }
 
-type Return struct {
+type Ret struct {
 	Tok   token.Token
 	Value Expr
 }
 
-func (r *Return) stmtNode()          {}
-func (r *Return) Token() token.Token { return r.Tok }
-func (r *Return) String() string     { return fmt.Sprintf("Return(%s)", r.Value) }
+func (r *Ret) stmtNode()          {}
+func (r *Ret) Token() token.Token { return r.Tok }
+func (r *Ret) String() string     { return fmt.Sprintf("Ret(%s)", r.Value) }
 
 type Block struct {
 	Tok        token.Token

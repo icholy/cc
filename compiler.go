@@ -57,24 +57,24 @@ func (c *Compiler) emitf(format string, args ...interface{}) {
 
 func (c *Compiler) Compile(p *ast.Program) error {
 	switch stmt := p.Body.(type) {
-	case *ast.Function:
-		return c.compileFunction(stmt)
+	case *ast.FuncDec:
+		return c.funcDec(stmt)
 	default:
 		return fmt.Errorf("cannot compile: %s", p.Body)
 	}
 }
 
-func (c *Compiler) compileExpr(expr ast.Expr) error {
+func (c *Compiler) expr(expr ast.Expr) error {
 	switch expr := expr.(type) {
-	case *ast.IntLiteral:
+	case *ast.IntLit:
 		c.emitf("movl $%d, %%eax", expr.Value)
 	case *ast.UnaryOp:
-		return c.compileUnaryOp(expr)
+		return c.unaryOp(expr)
 	case *ast.BinaryOp:
-		return c.compileBinaryOp(expr)
+		return c.binaryOp(expr)
 	case *ast.Var:
-		return c.compileVar(expr)
-	case *ast.Assignment:
+		return c.variable(expr)
+	case *ast.Assign:
 		return c.compileAssign(expr)
 	default:
 		return fmt.Errorf("cannot compile: %s", expr)
@@ -82,7 +82,7 @@ func (c *Compiler) compileExpr(expr ast.Expr) error {
 	return nil
 }
 
-func (c *Compiler) compileUnaryOp(unary *ast.UnaryOp) error {
+func (c *Compiler) unaryOp(unary *ast.UnaryOp) error {
 	switch unary.Op {
 	case "-":
 		c.emitf("neg %%eax")
@@ -98,23 +98,23 @@ func (c *Compiler) compileUnaryOp(unary *ast.UnaryOp) error {
 	return nil
 }
 
-func (c *Compiler) compileStmt(stmt ast.Stmt) error {
+func (c *Compiler) stmt(stmt ast.Stmt) error {
 	switch stmt := stmt.(type) {
-	case *ast.Return:
-		return c.compileReturn(stmt)
+	case *ast.Ret:
+		return c.ret(stmt)
 	case *ast.VarDec:
-		return c.compileVarDec(stmt)
+		return c.varDec(stmt)
 	case *ast.ExprStmt:
-		return c.compileExpr(stmt.Expr)
+		return c.expr(stmt.Expr)
 	default:
 		return fmt.Errorf("cannot compile: %s", stmt)
 	}
 	return nil
 }
 
-func (c *Compiler) compileVarDec(dec *ast.VarDec) error {
+func (c *Compiler) varDec(dec *ast.VarDec) error {
 	if dec.Value != nil {
-		if err := c.compileExpr(dec.Value); err != nil {
+		if err := c.expr(dec.Value); err != nil {
 			return err
 		}
 	} else {
@@ -128,8 +128,8 @@ func (c *Compiler) compileVarDec(dec *ast.VarDec) error {
 	return nil
 }
 
-func (c *Compiler) compileAssign(assign *ast.Assignment) error {
-	if err := c.compileExpr(assign.Value); err != nil {
+func (c *Compiler) compileAssign(assign *ast.Assign) error {
+	if err := c.expr(assign.Value); err != nil {
 		return err
 	}
 	offset, err := c.frame().Offset(assign.Var.Name)
@@ -140,7 +140,7 @@ func (c *Compiler) compileAssign(assign *ast.Assignment) error {
 	return nil
 }
 
-func (c *Compiler) compileVar(v *ast.Var) error {
+func (c *Compiler) variable(v *ast.Var) error {
 	offset, err := c.frame().Offset(v.Name)
 	if err != nil {
 		return err
@@ -149,20 +149,20 @@ func (c *Compiler) compileVar(v *ast.Var) error {
 	return nil
 }
 
-func (c *Compiler) compileReturn(ret *ast.Return) error {
-	if err := c.compileExpr(ret.Value); err != nil {
+func (c *Compiler) ret(ret *ast.Ret) error {
+	if err := c.expr(ret.Value); err != nil {
 		return err
 	}
 	c.emitf("jmp %s", c.frame().Exit)
 	return nil
 }
 
-func (c *Compiler) compileBinaryOp(binary *ast.BinaryOp) error {
-	if err := c.compileExpr(binary.Left); err != nil {
+func (c *Compiler) binaryOp(binary *ast.BinaryOp) error {
+	if err := c.expr(binary.Left); err != nil {
 		return err
 	}
 	c.emitf("push %%eax\n")
-	if err := c.compileExpr(binary.Right); err != nil {
+	if err := c.expr(binary.Right); err != nil {
 		return err
 	}
 	c.emitf("pop %%ecx\n")
@@ -235,7 +235,7 @@ func (f *Frame) Size() int {
 	return f.NumLocals * 4
 }
 
-func (c *Compiler) newFrame(f *ast.Function) *Frame {
+func (c *Compiler) newFrame(f *ast.FuncDec) *Frame {
 	frame := &Frame{
 		Entry:   fmt.Sprintf("_%s", f.Name),
 		Exit:    fmt.Sprintf("_%s_exit", f.Name),
@@ -250,7 +250,7 @@ func (c *Compiler) newFrame(f *ast.Function) *Frame {
 	return frame
 }
 
-func (c *Compiler) compileFunction(f *ast.Function) error {
+func (c *Compiler) funcDec(f *ast.FuncDec) error {
 
 	frame := c.newFrame(f)
 	c.framePush(frame)
@@ -263,7 +263,7 @@ func (c *Compiler) compileFunction(f *ast.Function) error {
 	c.emitf("subl $%d, %%esp", frame.Size())
 
 	for _, stmt := range f.Body.Statements {
-		if err := c.compileStmt(stmt); err != nil {
+		if err := c.stmt(stmt); err != nil {
 			return err
 		}
 	}

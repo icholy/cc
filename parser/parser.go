@@ -48,7 +48,7 @@ func (p *Parser) expect(typ token.TokenType) error {
 func (p *Parser) Parse() (*ast.Program, error) {
 	p.trace("Parse")
 	prog := &ast.Program{Tok: p.cur}
-	fn, err := p.parseFunction()
+	fn, err := p.funcDec()
 	if err != nil {
 		return nil, err
 	}
@@ -56,14 +56,14 @@ func (p *Parser) Parse() (*ast.Program, error) {
 	return prog, nil
 }
 
-func (p *Parser) parseBlock() (*ast.Block, error) {
+func (p *Parser) block() (*ast.Block, error) {
 	p.trace("Block")
 	if err := p.expect(token.LBRACE); err != nil {
 		return nil, err
 	}
 	block := &ast.Block{Tok: p.cur}
 	for !p.cur.OneOf(token.RBRACE, token.EOF) {
-		stmt, err := p.parseStmt()
+		stmt, err := p.stmt()
 		if err != nil {
 			return nil, err
 		}
@@ -75,13 +75,13 @@ func (p *Parser) parseBlock() (*ast.Block, error) {
 	return block, nil
 }
 
-func (p *Parser) parseFunction() (*ast.Function, error) {
-	p.trace("parseFunction")
-	fn := &ast.Function{Tok: p.cur}
+func (p *Parser) funcDec() (*ast.FuncDec, error) {
+	p.trace("FuncDec")
+	fd := &ast.FuncDec{Tok: p.cur}
 	if err := p.expect(token.INT_TYPE); err != nil {
 		return nil, err
 	}
-	fn.Name = p.cur.Text
+	fd.Name = p.cur.Text
 	if err := p.expect(token.IDENT); err != nil {
 		return nil, err
 	}
@@ -91,32 +91,32 @@ func (p *Parser) parseFunction() (*ast.Function, error) {
 	if err := p.expect(token.RPAREN); err != nil {
 		return nil, err
 	}
-	block, err := p.parseBlock()
+	block, err := p.block()
 	if err != nil {
 		return nil, err
 	}
-	fn.Body = block
-	return fn, nil
+	fd.Body = block
+	return fd, nil
 }
 
 func (p *Parser) trace(s string) {
 	// fmt.Println(s, p.cur)
 }
 
-func (p *Parser) parseStmt() (ast.Stmt, error) {
-	p.trace("stmt")
+func (p *Parser) stmt() (ast.Stmt, error) {
+	p.trace("Stmt")
 	switch {
 	case p.cur.Is(token.INT_TYPE):
-		return p.parseVarDec()
+		return p.varDec()
 	case p.cur.Is(token.RETURN):
-		return p.parseReturn()
+		return p.ret()
 	default:
-		return p.parseExprStmt()
+		return p.exprStmt()
 	}
 }
 
-func (p *Parser) parseVarDec() (ast.Stmt, error) {
-	p.trace("vardec")
+func (p *Parser) varDec() (*ast.VarDec, error) {
+	p.trace("VarDec")
 	decl := &ast.VarDec{Tok: p.cur}
 	if err := p.expect(token.INT_TYPE); err != nil {
 		return nil, err
@@ -127,7 +127,7 @@ func (p *Parser) parseVarDec() (ast.Stmt, error) {
 	}
 	if p.cur.Is(token.ASSIGN) {
 		p.next()
-		value, err := p.parseExpr()
+		value, err := p.expr()
 		if err != nil {
 			return nil, err
 		}
@@ -139,10 +139,10 @@ func (p *Parser) parseVarDec() (ast.Stmt, error) {
 	return decl, nil
 }
 
-func (p *Parser) parseExprStmt() (ast.Stmt, error) {
+func (p *Parser) exprStmt() (*ast.ExprStmt, error) {
 	p.trace("ExprStmt")
 	stmt := &ast.ExprStmt{Tok: p.cur}
-	expr, err := p.parseExpr()
+	expr, err := p.expr()
 	if err != nil {
 		return nil, err
 	}
@@ -153,13 +153,13 @@ func (p *Parser) parseExprStmt() (ast.Stmt, error) {
 	return stmt, nil
 }
 
-func (p *Parser) parseReturn() (ast.Stmt, error) {
-	p.trace("Return")
-	ret := &ast.Return{Tok: p.cur}
+func (p *Parser) ret() (*ast.Ret, error) {
+	p.trace("Ret")
+	ret := &ast.Ret{Tok: p.cur}
 	if err := p.expect(token.RETURN); err != nil {
 		return nil, err
 	}
-	expr, err := p.parseExpr()
+	expr, err := p.expr()
 	if err != nil {
 		return nil, err
 	}
@@ -170,17 +170,17 @@ func (p *Parser) parseReturn() (ast.Stmt, error) {
 	return ret, nil
 }
 
-func (p *Parser) parseExpr() (ast.Expr, error) {
+func (p *Parser) expr() (ast.Expr, error) {
 	p.trace("Expr")
 	switch {
 	case p.cur.Is(token.IDENT) && p.peek.Is(token.ASSIGN):
-		return p.parseAssign()
+		return p.assignment()
 	default:
-		return p.parseOr()
+		return p.or()
 	}
 }
 
-func (p *Parser) parseVar() (*ast.Var, error) {
+func (p *Parser) variable() (*ast.Var, error) {
 	p.trace("Var")
 	v := &ast.Var{Tok: p.cur, Name: p.cur.Text}
 	if err := p.expect(token.IDENT); err != nil {
@@ -189,17 +189,17 @@ func (p *Parser) parseVar() (*ast.Var, error) {
 	return v, nil
 }
 
-func (p *Parser) parseAssign() (ast.Expr, error) {
+func (p *Parser) assignment() (*ast.Assign, error) {
 	p.trace("Assignment")
-	v, err := p.parseVar()
+	v, err := p.variable()
 	if err != nil {
 		return nil, err
 	}
-	expr := &ast.Assignment{Tok: p.cur, Var: v}
+	expr := &ast.Assign{Tok: p.cur, Var: v}
 	if err := p.expect(token.ASSIGN); err != nil {
 		return nil, err
 	}
-	value, err := p.parseExpr()
+	value, err := p.expr()
 	if err != nil {
 		return nil, err
 	}
@@ -207,47 +207,47 @@ func (p *Parser) parseAssign() (ast.Expr, error) {
 	return expr, nil
 }
 
-func (p *Parser) parseOr() (ast.Expr, error) {
-	return p.parseBinary(p.parseAnd, token.OR)
+func (p *Parser) or() (ast.Expr, error) {
+	return p.binary(p.and, token.OR)
 }
 
-func (p *Parser) parseAnd() (ast.Expr, error) {
-	return p.parseBinary(p.parseEquality, token.AND)
+func (p *Parser) and() (ast.Expr, error) {
+	return p.binary(p.equality, token.AND)
 }
 
-func (p *Parser) parseEquality() (ast.Expr, error) {
-	return p.parseBinary(p.parseRelational, token.EQ, token.NE)
+func (p *Parser) equality() (ast.Expr, error) {
+	return p.binary(p.relational, token.EQ, token.NE)
 }
 
-func (p *Parser) parseRelational() (ast.Expr, error) {
-	return p.parseBinary(p.parseAdditive, token.GT, token.LT, token.GT_EQ, token.LT_EQ)
+func (p *Parser) relational() (ast.Expr, error) {
+	return p.binary(p.additive, token.GT, token.LT, token.GT_EQ, token.LT_EQ)
 }
 
-func (p *Parser) parseAdditive() (ast.Expr, error) {
-	return p.parseBinary(p.parseTerm, token.PLUS, token.MINUS)
+func (p *Parser) additive() (ast.Expr, error) {
+	return p.binary(p.term, token.PLUS, token.MINUS)
 }
 
-func (p *Parser) parseTerm() (ast.Expr, error) {
-	return p.parseBinary(p.parseFactor, token.ASTERISK, token.SLASH)
+func (p *Parser) term() (ast.Expr, error) {
+	return p.binary(p.factor, token.ASTERISK, token.SLASH)
 }
 
-func (p *Parser) parseFactor() (ast.Expr, error) {
+func (p *Parser) factor() (ast.Expr, error) {
 	p.trace("factor")
 	switch {
 	case p.cur.Is(token.IDENT):
-		return p.parseVar()
+		return p.variable()
 	case p.cur.Is(token.INT_LIT):
-		return p.parseIntLit()
+		return p.intLit()
 	case p.cur.Is(token.LPAREN):
-		return p.parseGrouped()
+		return p.grouped()
 	case p.isUnaryOp(p.cur):
-		return p.parseUnaryOp()
+		return p.unaryOp()
 	default:
 		return nil, fmt.Errorf("invalid factor: %s", p.cur)
 	}
 }
 
-func (p *Parser) parseBinary(parse func() (ast.Expr, error), types ...token.TokenType) (ast.Expr, error) {
+func (p *Parser) binary(parse func() (ast.Expr, error), types ...token.TokenType) (ast.Expr, error) {
 	expr, err := parse()
 	if err != nil {
 		return nil, err
@@ -274,14 +274,14 @@ func (p *Parser) isUnaryOp(tok token.Token) bool {
 	}
 }
 
-func (p *Parser) parseUnaryOp() (ast.Expr, error) {
+func (p *Parser) unaryOp() (ast.Expr, error) {
 	p.trace("UnaryOp")
 	if !p.isUnaryOp(p.cur) {
 		return nil, fmt.Errorf("invalid unary op: %s", p.cur)
 	}
 	unary := &ast.UnaryOp{Tok: p.cur, Op: p.cur.Text}
 	p.next()
-	expr, err := p.parseFactor()
+	expr, err := p.factor()
 	if err != nil {
 		return nil, err
 	}
@@ -289,12 +289,12 @@ func (p *Parser) parseUnaryOp() (ast.Expr, error) {
 	return unary, nil
 }
 
-func (p *Parser) parseGrouped() (ast.Expr, error) {
+func (p *Parser) grouped() (ast.Expr, error) {
 	p.trace("Grouped")
 	if err := p.expect(token.LPAREN); err != nil {
 		return nil, err
 	}
-	expr, err := p.parseExpr()
+	expr, err := p.expr()
 	if err != nil {
 		return nil, err
 	}
@@ -304,9 +304,9 @@ func (p *Parser) parseGrouped() (ast.Expr, error) {
 	return expr, nil
 }
 
-func (p *Parser) parseIntLit() (ast.Expr, error) {
+func (p *Parser) intLit() (*ast.IntLit, error) {
 	p.trace("IntLit")
-	lit := &ast.IntLiteral{Tok: p.cur}
+	lit := &ast.IntLit{Tok: p.cur}
 	value, err := strconv.Atoi(p.cur.Text)
 	if err != nil {
 		return nil, err

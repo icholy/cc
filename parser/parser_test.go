@@ -25,11 +25,11 @@ func TestValidParsing(t *testing.T) {
 
 func withRetval(retval ast.Expr) *ast.Program {
 	return &ast.Program{
-		Body: &ast.Function{
+		Body: &ast.FuncDec{
 			Name: "main",
 			Body: &ast.Block{
 				Statements: []ast.Stmt{
-					&ast.Return{
+					&ast.Ret{
 						Value: retval,
 					},
 				},
@@ -39,18 +39,18 @@ func withRetval(retval ast.Expr) *ast.Program {
 }
 
 func TestAST(t *testing.T) {
-	AssertEqualAST(t, "../testdata/stage_1/valid/return_2.c", withRetval(&ast.IntLiteral{Value: 2}))
+	AssertEqualAST(t, "../testdata/stage_1/valid/return_2.c", withRetval(&ast.IntLit{Value: 2}))
 	AssertEqualAST(t, "../testdata/stage_2/valid/neg.c", withRetval(&ast.UnaryOp{
 		Op: "-",
-		Value: &ast.IntLiteral{
+		Value: &ast.IntLit{
 			Value: 5,
 		},
 	}))
 	AssertEqualAST(t, "../testdata/stage_3/valid/add.c", withRetval(
 		&ast.BinaryOp{
 			Op:    "+",
-			Left:  &ast.IntLiteral{Value: 1},
-			Right: &ast.IntLiteral{Value: 2},
+			Left:  &ast.IntLit{Value: 1},
+			Right: &ast.IntLit{Value: 2},
 		},
 	))
 	AssertEqualAST(t, "../testdata/stage_3/valid/associativity.c", withRetval(
@@ -58,28 +58,28 @@ func TestAST(t *testing.T) {
 			Op: "-",
 			Left: &ast.BinaryOp{
 				Op:    "-",
-				Left:  &ast.IntLiteral{Value: 1},
-				Right: &ast.IntLiteral{Value: 2},
+				Left:  &ast.IntLit{Value: 1},
+				Right: &ast.IntLit{Value: 2},
 			},
-			Right: &ast.IntLiteral{Value: 3},
+			Right: &ast.IntLit{Value: 3},
 		},
 	))
 	AssertEqualAST(t, "../testdata/stage_3/valid/precedence.c", withRetval(
 		&ast.BinaryOp{
 			Op:   "+",
-			Left: &ast.IntLiteral{Value: 2},
+			Left: &ast.IntLit{Value: 2},
 			Right: &ast.BinaryOp{
 				Op:    "*",
-				Left:  &ast.IntLiteral{Value: 3},
-				Right: &ast.IntLiteral{Value: 4},
+				Left:  &ast.IntLit{Value: 3},
+				Right: &ast.IntLit{Value: 4},
 			},
 		},
 	))
 	AssertEqualAST(t, "../testdata/stage_4/valid/eq_true.c", withRetval(
 		&ast.BinaryOp{
 			Op:    "==",
-			Left:  &ast.IntLiteral{Value: 1},
-			Right: &ast.IntLiteral{Value: 1},
+			Left:  &ast.IntLit{Value: 1},
+			Right: &ast.IntLit{Value: 1},
 		},
 	))
 }
