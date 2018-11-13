@@ -28,8 +28,17 @@ func (t Token) Is(typ TokenType) bool {
 	return t.Type == typ
 }
 
+func (t Token) OneOf(tt ...TokenType) bool {
+	for _, typ := range tt {
+		if t.Type == typ {
+			return true
+		}
+	}
+	return false
+}
+
 func (t Token) String() string {
-	return fmt.Sprintf("%s(\"%s\")", t.Type, t.Text)
+	return fmt.Sprintf("%s %s(\"%s\")", t.Pos, t.Type, t.Text)
 }
 
 const (

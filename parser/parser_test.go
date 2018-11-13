@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -113,7 +114,11 @@ func AssertParsingStage(t *testing.T, stage int) {
 		tests = append(tests, validityTest{path, false})
 	}
 	for _, tt := range tests {
-		t.Run(tt.SrcPath, func(t *testing.T) {
+		name := fmt.Sprintf("stage_%d/%s", stage, filepath.Base(tt.SrcPath))
+		t.Run(name, func(t *testing.T) {
+			if strings.Contains(name, "__no_parse") {
+				t.Skip()
+			}
 			src, err := ioutil.ReadFile(tt.SrcPath)
 			assert.NilError(t, err)
 			_, err = Parse(string(src))

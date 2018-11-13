@@ -187,17 +187,8 @@ func (l *Lexer) isAlpha() bool {
 }
 
 func (l *Lexer) Context(n int) string {
-	start := l.next - n
-	if start < 0 || n == 0 {
-		start = 0
-	}
-	end := l.next + n
-	if end >= len(l.input) || n == 0 {
-		end = len(l.input) - 1
-	}
-	offset := l.next - start - 1
-	src := l.input[start:end]
+	src := l.input
 	src = strings.Replace(src, "\n", " ", -1)
 	src = strings.Replace(src, "\r", " ", -1)
-	return fmt.Sprintf("%s\n%s^", src, strings.Repeat(" ", offset))
+	return fmt.Sprintf("%s\n%s^", src, strings.Repeat(" ", l.next-1))
 }
