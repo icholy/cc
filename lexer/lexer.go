@@ -192,8 +192,15 @@ func (l *Lexer) isAlpha() bool {
 }
 
 func (l *Lexer) Context(tok token.Token) string {
-	src := l.input
-	src = strings.Replace(src, "\n", " ", -1)
-	src = strings.Replace(src, "\r", " ", -1)
-	return fmt.Sprintf("|%s\n|%s^", src, strings.Repeat("-", tok.Pos.Offset))
+	col := tok.Pos.Col - 2
+	if col < 0 {
+		col = 0
+	}
+	lines := strings.Split(l.input, "\n")
+	return fmt.Sprintf("%s\n%s\n%s^\n%s",
+		strings.Join(lines[:tok.Pos.Line-1], "\n"),
+		lines[tok.Pos.Line-1],
+		strings.Repeat("-", col),
+		strings.Join(lines[tok.Pos.Line:], "\n"),
+	)
 }
