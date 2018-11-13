@@ -56,6 +56,15 @@ func (p *Parser) Parse() (*ast.Program, error) {
 	return prog, nil
 }
 
+func (p *Parser) blockStmt() (ast.Stmt, error) {
+	switch {
+	case p.cur.Is(token.INT_TYPE):
+		return p.varDec()
+	default:
+		return p.stmt()
+	}
+}
+
 func (p *Parser) block() (*ast.Block, error) {
 	p.trace("Block")
 	if err := p.expect(token.LBRACE); err != nil {
@@ -63,7 +72,7 @@ func (p *Parser) block() (*ast.Block, error) {
 	}
 	block := &ast.Block{Tok: p.cur}
 	for !p.cur.OneOf(token.RBRACE, token.EOF) {
-		stmt, err := p.stmt()
+		stmt, err := p.blockStmt()
 		if err != nil {
 			return nil, err
 		}
@@ -106,8 +115,6 @@ func (p *Parser) trace(s string) {
 func (p *Parser) stmt() (ast.Stmt, error) {
 	p.trace("Stmt")
 	switch {
-	case p.cur.Is(token.INT_TYPE):
-		return p.varDec()
 	case p.cur.Is(token.RETURN):
 		return p.ret()
 	default:
@@ -229,8 +236,6 @@ func (p *Parser) expr() (ast.Expr, error) {
 	switch {
 	case p.cur.Is(token.IDENT) && p.peek.Is(token.ASSIGN):
 		return p.assignment()
-	case p.peek.Is(token.QUESTION):
-		return p.ternary()
 	default:
 		return p.or()
 	}
