@@ -45,15 +45,6 @@ func (p *Parser) expect(typ token.TokenType) error {
 	return nil
 }
 
-func (p *Parser) isOneOf(tt ...token.TokenType) bool {
-	for _, t := range tt {
-		if p.cur.Is(t) {
-			return true
-		}
-	}
-	return false
-}
-
 func (p *Parser) Parse() (*ast.Program, error) {
 	p.trace("Parse")
 	prog := &ast.Program{Tok: p.cur}
@@ -66,7 +57,7 @@ func (p *Parser) Parse() (*ast.Program, error) {
 }
 
 func (p *Parser) parseBlock() (*ast.Block, error) {
-	p.trace("parseBlock")
+	p.trace("Block")
 	if err := p.expect(token.LBRACE); err != nil {
 		return nil, err
 	}
