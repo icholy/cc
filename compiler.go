@@ -86,10 +86,8 @@ func (c *Compiler) scopePush() {
 	}
 }
 
-func (c *Compiler) scopePop() *Scope {
-	s := c.scope
-	c.scope = s.Parent
-	return s
+func (c *Compiler) scopePop() {
+	c.scope = c.scope.Parent
 }
 
 func (c *Compiler) Assembly() string {
