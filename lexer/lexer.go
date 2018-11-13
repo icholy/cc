@@ -19,6 +19,7 @@ func New(input string) *Lexer {
 		input: input,
 		ch:    0,
 		next:  0,
+		pos:   token.Pos{1, 1},
 	}
 }
 
@@ -46,7 +47,7 @@ func (l *Lexer) read() byte {
 	// update the position
 	l.pos.Col++
 	if l.ch == '\n' || l.ch == '\r' {
-		l.pos.Col = 0
+		l.pos.Col = 1
 		l.pos.Line++
 	}
 	return l.ch
