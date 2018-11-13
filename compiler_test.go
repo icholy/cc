@@ -50,6 +50,21 @@ func TestOutput(t *testing.T) {
 			SrcPath:  "testdata/stage_5/valid/exp_return_val.c",
 			ExitCode: 0,
 		},
+		{
+			Name:     "if_nested_2",
+			SrcPath:  "testdata/stage_6/valid/if_nested_2.c",
+			ExitCode: 2,
+		},
+		{
+			Name:     "if_nested_3",
+			SrcPath:  "testdata/stage_6/valid/if_nested_3.c",
+			ExitCode: 3,
+		},
+		{
+			Name:     "if_nested_4",
+			SrcPath:  "testdata/stage_6/valid/if_nested_4.c",
+			ExitCode: 4,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
