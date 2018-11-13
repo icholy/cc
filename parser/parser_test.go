@@ -83,6 +83,17 @@ func TestAST(t *testing.T) {
 			Right: &ast.IntLit{Value: 1},
 		},
 	))
+	AssertEqualAST(t, "../testdata/stage_6/valid/return_ternary.c", withRetval(
+		&ast.Ternary{
+			Condition: &ast.IntLit{Value: 1},
+			Then:      &ast.IntLit{Value: 2},
+			Else: &ast.Ternary{
+				Condition: &ast.IntLit{Value: 3},
+				Then:      &ast.IntLit{Value: 4},
+				Else:      &ast.IntLit{Value: 5},
+			},
+		},
+	))
 }
 
 type validityTest struct {
