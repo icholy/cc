@@ -68,9 +68,15 @@ const (
 	GT        = "GT"
 	GT_EQ     = "GT_EQ"
 	ASSIGN    = "ASSIGN"
+	IF        = "IF"
+	ELSE      = "ELSE"
+	COLON     = "COLON"
+	QUESTION  = "QUESTION"
 )
 
 var Keywords = map[string]TokenType{
 	"return": RETURN,
 	"int":    INT_TYPE,
+	"if":     IF,
+	"else":   ELSE,
 }
