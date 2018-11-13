@@ -328,7 +328,9 @@ func (c *Compiler) block(b *ast.Block) error {
 	// find all the variable declarations before compiling
 	for _, stmt := range b.Statements {
 		if dec, ok := stmt.(*ast.VarDec); ok {
-			c.scope.Declare(dec)
+			if err := c.scope.Declare(dec); err != nil {
+				return err
+			}
 		}
 	}
 
