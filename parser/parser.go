@@ -115,6 +115,8 @@ func (p *Parser) trace(s string) {
 func (p *Parser) stmt() (ast.Stmt, error) {
 	p.trace("Stmt")
 	switch {
+	case p.cur.Is(token.IF):
+		return p._if()
 	case p.cur.Is(token.RETURN):
 		return p.ret()
 	default:
