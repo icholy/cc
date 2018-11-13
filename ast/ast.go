@@ -98,8 +98,8 @@ func (v *Var) String() string     { return v.Name }
 type If struct {
 	Tok       token.Token
 	Condition Expr
-	Then      *Block
-	Else      *Block
+	Then      Stmt
+	Else      Stmt
 }
 
 func (i *If) stmtNode()          {}
@@ -161,7 +161,7 @@ type Ternary struct {
 	Else      Expr
 }
 
-func (t *Ternary) stmtNode()          {}
+func (t *Ternary) exprNode()          {}
 func (t *Ternary) Token() token.Token { return t.Tok }
 func (t *Ternary) String() string {
 	return fmt.Sprintf("Ternary(%s ? %s : %s)", t.Condition, t.Then, t.Else)

@@ -170,11 +170,67 @@ func (p *Parser) ret() (*ast.Ret, error) {
 	return ret, nil
 }
 
+func (p *Parser) _if() (*ast.If, error) {
+	stmt := &ast.If{Tok: p.cur}
+	if err := p.expect(token.IF); err != nil {
+		return nil, err
+	}
+	if err := p.expect(token.LPAREN); err != nil {
+		return nil, err
+	}
+	var err error
+	stmt.Condition, err = p.expr()
+	if err != nil {
+		return nil, err
+	}
+	if err := p.expect(token.RPAREN); err != nil {
+		return nil, err
+	}
+	stmt.Then, err = p.stmt()
+	if err != nil {
+		return nil, err
+	}
+	if p.cur.Is(token.ELSE) {
+		p.next()
+		stmt.Else, err = p.stmt()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return stmt, nil
+}
+
+func (p *Parser) ternary() (*ast.Ternary, error) {
+	expr := &ast.Ternary{Tok: p.cur}
+	var err error
+	expr.Condition, err = p.expr()
+	if err != nil {
+		return nil, err
+	}
+	if err := p.expect(token.QUESTION); err != nil {
+		return nil, err
+	}
+	expr.Then, err = p.expr()
+	if err != nil {
+		return nil, err
+	}
+	if err := p.expect(token.COLON); err != nil {
+		return nil, err
+	}
+	expr.Else, err = p.expr()
+	if err != nil {
+		return nil, err
+	}
+	return expr, nil
+}
+
 func (p *Parser) expr() (ast.Expr, error) {
 	p.trace("Expr")
 	switch {
 	case p.cur.Is(token.IDENT) && p.peek.Is(token.ASSIGN):
 		return p.assignment()
+	case p.peek.Is(token.QUESTION):
+		return p.ternary()
 	default:
 		return p.or()
 	}
