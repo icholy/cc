@@ -54,23 +54,6 @@ func (p *Parser) isOneOf(tt ...token.TokenType) bool {
 	return false
 }
 
-func (p *Parser) expectPeek(typ token.TokenType) error {
-	if !p.peek.Is(typ) {
-		return fmt.Errorf("invalid token: %s, expecting %s", p.peek, typ)
-	}
-	p.next()
-	return nil
-}
-
-func (p *Parser) peekIsOneOf(tt ...token.TokenType) bool {
-	for _, t := range tt {
-		if p.peek.Is(t) {
-			return true
-		}
-	}
-	return false
-}
-
 func (p *Parser) Parse() (*ast.Program, error) {
 	p.trace("Parse")
 	prog := &ast.Program{Tok: p.cur}
@@ -143,14 +126,14 @@ func (p *Parser) parseStmt() (ast.Stmt, error) {
 
 func (p *Parser) parseVarDec() (ast.Stmt, error) {
 	p.trace("vardec")
-	decl := &ast.VarDec{Tok: p.peek}
+	decl := &ast.VarDec{Tok: p.cur}
 	if err := p.expect(token.INT_TYPE); err != nil {
 		return nil, err
 	}
+	decl.Name = p.cur.Text
 	if err := p.expect(token.IDENT); err != nil {
 		return nil, err
 	}
-	decl.Name = p.cur.Text
 	if p.cur.Is(token.ASSIGN) {
 		p.next()
 		value, err := p.parseExpr()
@@ -208,10 +191,11 @@ func (p *Parser) parseExpr() (ast.Expr, error) {
 
 func (p *Parser) parseVar() (*ast.Var, error) {
 	p.trace("Var")
+	v := &ast.Var{Tok: p.cur, Name: p.cur.Text}
 	if err := p.expect(token.IDENT); err != nil {
 		return nil, err
 	}
-	return &ast.Var{Tok: p.cur, Name: p.cur.Text}, nil
+	return v, nil
 }
 
 func (p *Parser) parseAssign() (ast.Expr, error) {
