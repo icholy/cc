@@ -22,7 +22,9 @@ func Compile(src string) (string, error) {
 
 type Compiler struct {
 	asm    *strings.Builder
+	scope  *Scope
 	frames []*Frame
+	labels int
 }
 
 func New() *Compiler {
@@ -60,45 +62,57 @@ func (s *Scope) ParentOffset() int {
 	return s.Parent.Offset
 }
 
-func (s *Scope) AddVarDec(d *ast.VarDec) {
+func (s *Scope) Declare(d *ast.VarDec) error {
 	s.Offset -= 4
+	if _, ok := s.Locals[d.Name]; ok {
+		return fmt.Errorf("already declared: %s", d.Name)
+	}
 	s.Locals[d.Name] = &Local{
 		Name:     d.Name,
 		Offset:   s.ParentOffset() + s.Offset,
 		Declared: false,
 	}
+	return nil
 }
 
 type Frame struct {
-	NumLabels int
-	Entry     string
-	Exit      string
-	Scope     *Scope
+	Scope *Scope
 }
 
 func (f *Frame) Local(name string) (*Local, error) {
 	return f.Scope.Local(name)
 }
 
-func (f *Frame) Label() string {
-	f.NumLabels++
-	return fmt.Sprintf("_%s_l%d", f.Entry, f.NumLabels)
-}
-
 func (c *Compiler) newFrame(f *ast.FuncDec) *Frame {
 	frame := &Frame{
-		Entry: fmt.Sprintf("_%s", f.Name),
-		Exit:  fmt.Sprintf("_%s_exit", f.Name),
 		Scope: &Scope{
 			Locals: make(map[string]*Local),
 		},
 	}
 	for _, stmt := range f.Body.Statements {
 		if dec, ok := stmt.(*ast.VarDec); ok {
-			frame.Scope.AddVarDec(dec)
+			frame.Scope.Declare(dec)
 		}
 	}
 	return frame
+}
+
+func (c *Compiler) label() string {
+	c.labels++
+	return fmt.Sprintf("_L%d", c.labels)
+}
+
+func (c *Compiler) scopePush() {
+	c.scope = &Scope{
+		Parent: c.scope,
+		Locals: make(map[string]*Local),
+	}
+}
+
+func (c *Compiler) scopePop() *Scope {
+	s := c.scope
+	c.scope = s.Parent
+	return s
 }
 
 func (c *Compiler) frame() *Frame {
@@ -203,7 +217,7 @@ func (c *Compiler) varDec(dec *ast.VarDec) error {
 }
 
 func (c *Compiler) ternary(tern *ast.Ternary) error {
-	afterThen, end := c.frame().Label(), c.frame().Label()
+	afterThen, end := c.label(), c.label()
 	if err := c.expr(tern.Condition); err != nil {
 		return err
 	}
@@ -222,7 +236,7 @@ func (c *Compiler) ternary(tern *ast.Ternary) error {
 }
 
 func (c *Compiler) _if(ife *ast.If) error {
-	afterThen, end := c.frame().Label(), c.frame().Label()
+	afterThen, end := c.label(), c.label()
 	if err := c.expr(ife.Condition); err != nil {
 		return err
 	}
@@ -334,8 +348,8 @@ func (c *Compiler) binaryOp(binary *ast.BinaryOp) error {
 }
 
 func (c *Compiler) preable(name string) {
-	c.emitf(".globl %s", name)
-	c.emitf("%s:", name)
+	c.emitf(".globl _%s", name)
+	c.emitf("_%s:", name)
 	c.emitf("push %%ebp")
 	c.emitf("movl %%esp, %%ebp")
 }
@@ -346,23 +360,38 @@ func (c *Compiler) prologue() {
 	c.emitf("ret")
 }
 
+func (c *Compiler) block(b *ast.Block) error {
+	c.scopePush()
+
+	// find all the variable declarations before compiling
+	for _, stmt := range b.Statements {
+		if dec, ok := stmt.(*ast.VarDec); ok {
+			c.scope.Declare(dec)
+		}
+	}
+
+	for _, stmt := range b.Statements {
+		if err := c.stmt(stmt); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *Compiler) funcDec(f *ast.FuncDec) error {
 
 	frame := c.newFrame(f)
 	c.framePush(frame)
 	defer c.framePop()
 
-	c.preable(frame.Entry)
+	c.preable(f.Name)
 	c.emitf("subl $%d, %%esp", -frame.Scope.Offset)
 
-	for _, stmt := range f.Body.Statements {
-		if err := c.stmt(stmt); err != nil {
-			return err
-		}
+	if err := c.block(f.Body); err != nil {
+		return err
 	}
 
 	c.emitf("movl $0, %%eax")
-	c.emitf("%s:", frame.Exit)
 	c.prologue()
 	return nil
 }
