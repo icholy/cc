@@ -23,7 +23,6 @@ func Compile(src string) (string, error) {
 type Compiler struct {
 	asm    *strings.Builder
 	scope  *Scope
-	frames []*Frame
 	labels int
 }
 
@@ -75,28 +74,6 @@ func (s *Scope) Declare(d *ast.VarDec) error {
 	return nil
 }
 
-type Frame struct {
-	Scope *Scope
-}
-
-func (f *Frame) Local(name string) (*Local, error) {
-	return f.Scope.Local(name)
-}
-
-func (c *Compiler) newFrame(f *ast.FuncDec) *Frame {
-	frame := &Frame{
-		Scope: &Scope{
-			Locals: make(map[string]*Local),
-		},
-	}
-	for _, stmt := range f.Body.Statements {
-		if dec, ok := stmt.(*ast.VarDec); ok {
-			frame.Scope.Declare(dec)
-		}
-	}
-	return frame
-}
-
 func (c *Compiler) label() string {
 	c.labels++
 	return fmt.Sprintf("_L%d", c.labels)
@@ -113,22 +90,6 @@ func (c *Compiler) scopePop() *Scope {
 	s := c.scope
 	c.scope = s.Parent
 	return s
-}
-
-func (c *Compiler) frame() *Frame {
-	l := len(c.frames)
-	return c.frames[l-1]
-}
-
-func (c *Compiler) framePush(frame *Frame) {
-	c.frames = append(c.frames, frame)
-}
-
-func (c *Compiler) framePop() *Frame {
-	l := len(c.frames)
-	f := c.frames[l-1]
-	c.frames = c.frames[:l-1]
-	return f
 }
 
 func (c *Compiler) Assembly() string {
@@ -207,7 +168,7 @@ func (c *Compiler) varDec(dec *ast.VarDec) error {
 	} else {
 		c.emitf("movl $0, %%eax")
 	}
-	loc, err := c.frame().Local(dec.Name)
+	loc, err := c.scope.Local(dec.Name)
 	if err != nil {
 		return err
 	}
@@ -260,7 +221,7 @@ func (c *Compiler) assign(assign *ast.Assign) error {
 	if err := c.expr(assign.Value); err != nil {
 		return err
 	}
-	loc, err := c.frame().Local(assign.Var.Name)
+	loc, err := c.scope.Local(assign.Var.Name)
 	if err != nil {
 		return err
 	}
@@ -269,7 +230,7 @@ func (c *Compiler) assign(assign *ast.Assign) error {
 }
 
 func (c *Compiler) variable(v *ast.Var) error {
-	loc, err := c.frame().Local(v.Name)
+	loc, err := c.scope.Local(v.Name)
 	if err != nil {
 		return err
 	}
@@ -362,6 +323,7 @@ func (c *Compiler) prologue() {
 
 func (c *Compiler) block(b *ast.Block) error {
 	c.scopePush()
+	defer c.scopePop()
 
 	// find all the variable declarations before compiling
 	for _, stmt := range b.Statements {
@@ -370,27 +332,21 @@ func (c *Compiler) block(b *ast.Block) error {
 		}
 	}
 
+	c.emitf("subl $%d, %%esp", -c.scope.Offset)
 	for _, stmt := range b.Statements {
 		if err := c.stmt(stmt); err != nil {
 			return err
 		}
 	}
+	c.emitf("addl $%d, %%esp", -c.scope.Offset)
 	return nil
 }
 
 func (c *Compiler) funcDec(f *ast.FuncDec) error {
-
-	frame := c.newFrame(f)
-	c.framePush(frame)
-	defer c.framePop()
-
 	c.preable(f.Name)
-	c.emitf("subl $%d, %%esp", -frame.Scope.Offset)
-
 	if err := c.block(f.Body); err != nil {
 		return err
 	}
-
 	c.emitf("movl $0, %%eax")
 	c.prologue()
 	return nil
