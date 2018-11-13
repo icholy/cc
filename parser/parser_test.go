@@ -94,6 +94,28 @@ func TestAST(t *testing.T) {
 			},
 		},
 	))
+	AssertEqualAST(t, "../testdata/stage_6/valid/else.c", &ast.Program{
+		Body: &ast.FuncDec{
+			Name: "main",
+			Body: &ast.Block{
+				Statements: []ast.Stmt{
+					&ast.VarDec{
+						Name:  "a",
+						Value: &ast.IntLit{Value: 0},
+					},
+					&ast.If{
+						Condition: &ast.Var{Name: "a"},
+						Then: &ast.Ret{
+							Value: &ast.IntLit{Value: 1},
+						},
+						Else: &ast.Ret{
+							Value: &ast.IntLit{Value: 2},
+						},
+					},
+				},
+			},
+		},
+	})
 }
 
 type validityTest struct {
