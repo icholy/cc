@@ -19,7 +19,7 @@ func New(input string) *Lexer {
 		input: input,
 		ch:    0,
 		next:  0,
-		pos:   token.Pos{1, 1},
+		pos:   token.Pos{0, 1, 1},
 	}
 }
 
@@ -43,13 +43,15 @@ func (l *Lexer) read() byte {
 	}
 	// update the current character
 	l.ch = l.input[l.next]
-	l.next++
 	// update the position
+	l.pos.Offset = l.next
 	l.pos.Col++
 	if l.ch == '\n' || l.ch == '\r' {
 		l.pos.Col = 1
 		l.pos.Line++
 	}
+	// update the index
+	l.next++
 	return l.ch
 }
 
@@ -189,9 +191,9 @@ func (l *Lexer) isAlpha() bool {
 	return ('a' <= l.ch && l.ch <= 'z') || ('A' <= l.ch && l.ch <= 'Z') || l.ch == '_'
 }
 
-func (l *Lexer) Context(n int) string {
+func (l *Lexer) Context(tok token.Token) string {
 	src := l.input
 	src = strings.Replace(src, "\n", " ", -1)
 	src = strings.Replace(src, "\r", " ", -1)
-	return fmt.Sprintf("%s\n%s^", src, strings.Repeat(" ", l.next-1))
+	return fmt.Sprintf("|%s\n|%s^", src, strings.Repeat("-", tok.Pos.Offset))
 }

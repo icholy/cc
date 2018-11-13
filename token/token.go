@@ -7,7 +7,7 @@ import (
 type TokenType string
 
 type Pos struct {
-	Line, Col int
+	Offset, Line, Col int
 }
 
 func (p Pos) String() string {
