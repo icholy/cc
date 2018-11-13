@@ -65,6 +65,26 @@ func TestOutput(t *testing.T) {
 			SrcPath:  "testdata/stage_6/valid/if_nested_4.c",
 			ExitCode: 4,
 		},
+		{
+			Name:     "consecutive_blocks.c",
+			SrcPath:  "testdata/stage_7/valid/consecutive_blocks.c",
+			ExitCode: 1,
+		},
+		{
+			Name:     "consecutive_declarations.c",
+			SrcPath:  "testdata/stage_7/valid/consecutive_declarations.c",
+			ExitCode: 3,
+		},
+		{
+			Name:     "multi_nesting.c",
+			SrcPath:  "testdata/stage_7/valid/multi_nesting.c",
+			ExitCode: 3,
+		},
+		{
+			Name:     "nested_scope.c",
+			SrcPath:  "testdata/stage_7/valid/nested_scope.c",
+			ExitCode: 4,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
