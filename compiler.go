@@ -31,20 +31,38 @@ func New() *Compiler {
 	}
 }
 
+type Local struct {
+	Name     string
+	Declared bool
+	Offset   int
+}
+
 type Frame struct {
 	NumLabels int
 	Entry     string
 	Exit      string
 	NumLocals int
-	Offsets   map[string]int
+	Locals    map[string]*Local
 }
 
 func (f *Frame) Offset(name string) (int, error) {
-	off, ok := f.Offsets[name]
+	loc, ok := f.Locals[name]
 	if !ok {
 		return 0, fmt.Errorf("undefined: %s", name)
 	}
-	return off, nil
+	if !loc.Declared {
+		return 0, fmt.Errorf("used before declaration: %s", name)
+	}
+	return loc.Offset, nil
+}
+
+func (f *Frame) Declare(name string) error {
+	loc, ok := f.Locals[name]
+	if !ok {
+		return fmt.Errorf("undefined: %s", name)
+	}
+	loc.Declared = true
+	return nil
 }
 
 func (f *Frame) Label() string {
@@ -58,14 +76,18 @@ func (f *Frame) Size() int {
 
 func (c *Compiler) newFrame(f *ast.FuncDec) *Frame {
 	frame := &Frame{
-		Entry:   fmt.Sprintf("_%s", f.Name),
-		Exit:    fmt.Sprintf("_%s_exit", f.Name),
-		Offsets: make(map[string]int),
+		Entry:  fmt.Sprintf("_%s", f.Name),
+		Exit:   fmt.Sprintf("_%s_exit", f.Name),
+		Locals: make(map[string]*Local),
 	}
 	for _, stmt := range f.Body.Statements {
 		if dec, ok := stmt.(*ast.VarDec); ok {
 			frame.NumLocals++
-			frame.Offsets[dec.Name] = frame.NumLocals * -4
+			frame.Locals[dec.Name] = &Local{
+				Name:     dec.Name,
+				Offset:   frame.NumLocals * -4,
+				Declared: false,
+			}
 		}
 	}
 	return frame
@@ -163,6 +185,9 @@ func (c *Compiler) varDec(dec *ast.VarDec) error {
 		}
 	} else {
 		c.emitf("movl $0, %%eax")
+	}
+	if err := c.frame().Declare(dec.Name); err != nil {
+		return err
 	}
 	offset, err := c.frame().Offset(dec.Name)
 	if err != nil {
