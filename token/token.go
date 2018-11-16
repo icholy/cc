@@ -72,6 +72,9 @@ const (
 	ELSE      = "ELSE"
 	COLON     = "COLON"
 	QUESTION  = "QUESTION"
+	DO        = "DO"
+	WHILE     = "WHILE"
+	FOR       = "FOR"
 )
 
 var Keywords = map[string]TokenType{
@@ -79,4 +82,7 @@ var Keywords = map[string]TokenType{
 	"int":    INT_TYPE,
 	"if":     IF,
 	"else":   ELSE,
+	"do":     DO,
+	"while":  WHILE,
+	"for":    FOR,
 }
