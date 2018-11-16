@@ -125,6 +125,8 @@ func (p *Parser) stmt() (ast.Stmt, error) {
 		return p._if()
 	case p.cur.Is(token.RETURN):
 		return p.ret()
+	case p.cur.Is(token.WHILE):
+		return p.whileLoop()
 	default:
 		return p.exprStmt()
 	}
@@ -183,6 +185,29 @@ func (p *Parser) ret() (*ast.Ret, error) {
 		return nil, err
 	}
 	return ret, nil
+}
+
+func (p *Parser) whileLoop() (*ast.While, error) {
+	w := &ast.While{Tok: p.cur}
+	if err := p.expect(token.WHILE); err != nil {
+		return nil, err
+	}
+	if err := p.expect(token.LPAREN); err != nil {
+		return nil, err
+	}
+	var err error
+	w.Condition, err = p.expr()
+	if err != nil {
+		return nil, err
+	}
+	if err := p.expect(token.RPAREN); err != nil {
+		return nil, err
+	}
+	w.Body, err = p.stmt()
+	if err != nil {
+		return nil, err
+	}
+	return w, nil
 }
 
 func (p *Parser) _if() (*ast.If, error) {
