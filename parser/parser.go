@@ -127,6 +127,8 @@ func (p *Parser) stmt() (ast.Stmt, error) {
 		return p.ret()
 	case p.cur.Is(token.WHILE):
 		return p.whileLoop()
+	case p.cur.Is(token.DO):
+		return p.doLoop()
 	default:
 		return p.exprStmt()
 	}
@@ -208,6 +210,35 @@ func (p *Parser) whileLoop() (*ast.While, error) {
 		return nil, err
 	}
 	return w, nil
+}
+
+func (p *Parser) doLoop() (*ast.Do, error) {
+	d := &ast.Do{Tok: p.cur}
+	if err := p.expect(token.DO); err != nil {
+		return nil, err
+	}
+	var err error
+	d.Body, err = p.stmt()
+	if err != nil {
+		return nil, err
+	}
+	if err := p.expect(token.WHILE); err != nil {
+		return nil, err
+	}
+	if err := p.expect(token.LPAREN); err != nil {
+		return nil, err
+	}
+	d.Condition, err = p.expr()
+	if err != nil {
+		return nil, err
+	}
+	if err := p.expect(token.RPAREN); err != nil {
+		return nil, err
+	}
+	if err := p.expect(token.SEMICOLON); err != nil {
+		return nil, err
+	}
+	return d, nil
 }
 
 func (p *Parser) _if() (*ast.If, error) {
