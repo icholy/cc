@@ -75,6 +75,7 @@ const (
 	DO        = "DO"
 	WHILE     = "WHILE"
 	FOR       = "FOR"
+	BREAK     = "BREAK"
 )
 
 var Keywords = map[string]TokenType{
@@ -85,4 +86,5 @@ var Keywords = map[string]TokenType{
 	"do":     DO,
 	"while":  WHILE,
 	"for":    FOR,
+	"break":  BREAK,
 }

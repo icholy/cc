@@ -200,3 +200,11 @@ type Do struct {
 func (d *Do) stmtNode()          {}
 func (d *Do) Token() token.Token { return d.Tok }
 func (d *Do) String() string     { return fmt.Sprintf("DO %s WHILE(%s)", d.Body, d.Condition) }
+
+type Break struct {
+	Tok token.Token
+}
+
+func (b *Break) stmtNode()          {}
+func (b *Break) Token() token.Token { return b.Tok }
+func (b *Break) String() string     { return "BREAK" }
