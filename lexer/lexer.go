@@ -19,7 +19,7 @@ func New(input string) *Lexer {
 		input: input,
 		ch:    0,
 		next:  0,
-		pos:   token.Pos{0, 1, 1},
+		pos:   token.Pos{-1, 1, 0},
 	}
 }
 
@@ -55,16 +55,16 @@ func (l *Lexer) read() byte {
 	return l.ch
 }
 
-func (l *Lexer) newTok(typ token.TokenType, text string) token.Token {
+func (l *Lexer) newTok(typ token.TokenType, text string, pos token.Pos) token.Token {
 	return token.Token{
 		Type: typ,
 		Text: text,
-		Pos:  l.pos,
+		Pos:  pos,
 	}
 }
 
-func (l *Lexer) newByteTok(typ token.TokenType) token.Token {
-	return l.newTok(typ, string([]byte{l.ch}))
+func (l *Lexer) newByteTok(typ token.TokenType, pos token.Pos) token.Token {
+	return l.newTok(typ, string([]byte{l.ch}), pos)
 }
 
 var bytetokens = map[byte]token.TokenType{
@@ -99,22 +99,23 @@ func (l *Lexer) Lex() token.Token {
 	// find the next non-white token
 	l.read()
 	l.whitespace()
+	pos := l.pos
 
 	// check for end of file
 	if l.ch == 0 {
-		return l.newTok(token.EOF, "")
+		return l.newTok(token.EOF, "", pos)
 	}
 
 	// double byte tokens
 	twobytes := l.twoBytes()
 	if typ, ok := twobytetokens[twobytes]; ok {
 		l.read()
-		return l.newTok(typ, twobytes)
+		return l.newTok(typ, twobytes, pos)
 	}
 
 	// single byte tokens
 	if typ, ok := bytetokens[l.ch]; ok {
-		return l.newByteTok(typ)
+		return l.newByteTok(typ, pos)
 	}
 
 	// more complex tokens
@@ -128,7 +129,7 @@ func (l *Lexer) Lex() token.Token {
 		}
 		return tok
 	default:
-		return l.newByteTok(token.ILLEGAL)
+		return l.newByteTok(token.ILLEGAL, pos)
 	}
 }
 
@@ -149,23 +150,25 @@ func (l *Lexer) Tokenize() []token.Token {
 }
 
 func (l *Lexer) lexInt() token.Token {
+	pos := l.pos
 	var text strings.Builder
 	for l.isDigit() {
 		text.WriteByte(l.ch)
 		l.read()
 	}
 	l.unread()
-	return l.newTok(token.INT_LIT, text.String())
+	return l.newTok(token.INT_LIT, text.String(), pos)
 }
 
 func (l *Lexer) lexIdent() token.Token {
+	pos := l.pos
 	var text strings.Builder
 	for l.isAlpha() || l.isDigit() {
 		text.WriteByte(l.ch)
 		l.read()
 	}
 	l.unread()
-	return l.newTok(token.IDENT, text.String())
+	return l.newTok(token.IDENT, text.String(), pos)
 }
 
 func (l *Lexer) whitespace() {
