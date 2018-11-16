@@ -208,3 +208,19 @@ type Break struct {
 func (b *Break) stmtNode()          {}
 func (b *Break) Token() token.Token { return b.Tok }
 func (b *Break) String() string     { return "BREAK" }
+
+type Continue struct {
+	Tok token.Token
+}
+
+func (c *Continue) stmtNode()          {}
+func (c *Continue) Token() token.Token { return c.Tok }
+func (c *Continue) String() string     { return "CONTINUE" }
+
+type Null struct {
+	Tok token.Token
+}
+
+func (n *Null) stmtNode()          {}
+func (n *Null) Token() token.Token { return n.Tok }
+func (n *Null) String() string     { return "NULL" }

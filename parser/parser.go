@@ -129,6 +129,12 @@ func (p *Parser) stmt() (ast.Stmt, error) {
 		return p.whileLoop()
 	case p.cur.Is(token.DO):
 		return p.doLoop()
+	case p.cur.Is(token.CONTINUE):
+		return p._continue()
+	case p.cur.Is(token.BREAK):
+		return p._break()
+	case p.cur.Is(token.SEMICOLON):
+		return p.null()
 	default:
 		return p.exprStmt()
 	}
@@ -170,6 +176,36 @@ func (p *Parser) exprStmt() (*ast.ExprStmt, error) {
 		return nil, err
 	}
 	return stmt, nil
+}
+
+func (p *Parser) null() (*ast.Null, error) {
+	n := &ast.Null{Tok: p.cur}
+	if err := p.expect(token.SEMICOLON); err != nil {
+		return nil, err
+	}
+	return n, nil
+}
+
+func (p *Parser) _break() (*ast.Break, error) {
+	b := &ast.Break{Tok: p.cur}
+	if err := p.expect(token.BREAK); err != nil {
+		return nil, err
+	}
+	if err := p.expect(token.SEMICOLON); err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+func (p *Parser) _continue() (*ast.Continue, error) {
+	c := &ast.Continue{Tok: p.cur}
+	if err := p.expect(token.CONTINUE); err != nil {
+		return nil, err
+	}
+	if err := p.expect(token.SEMICOLON); err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 
 func (p *Parser) ret() (*ast.Ret, error) {
@@ -239,6 +275,18 @@ func (p *Parser) doLoop() (*ast.Do, error) {
 		return nil, err
 	}
 	return d, nil
+}
+
+func (p *Parser) forLoop() (*ast.For, error) {
+	f := &ast.For{Tok: p.cur}
+	if err := p.expect(token.FOR); err != nil {
+		return nil, err
+	}
+	if err := p.expect(token.LPAREN); err != nil {
+		return nil, err
+	}
+	// TODO: continue here
+	return f, nil
 }
 
 func (p *Parser) _if() (*ast.If, error) {
