@@ -76,6 +76,7 @@ const (
 	WHILE     = "WHILE"
 	FOR       = "FOR"
 	BREAK     = "BREAK"
+	PERCENT   = "PERCENT"
 )
 
 var Keywords = map[string]TokenType{

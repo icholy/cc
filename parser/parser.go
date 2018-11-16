@@ -370,7 +370,7 @@ func (p *Parser) additive() (ast.Expr, error) {
 }
 
 func (p *Parser) term() (ast.Expr, error) {
-	return p.binary(p.factor, token.ASTERISK, token.SLASH)
+	return p.binary(p.factor, token.ASTERISK, token.SLASH, token.PERCENT)
 }
 
 func (p *Parser) factor() (ast.Expr, error) {
