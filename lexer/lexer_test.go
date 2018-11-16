@@ -3,6 +3,7 @@ package lexer
 import (
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	"testing"
 
 	"gotest.tools/assert"
@@ -109,5 +110,34 @@ func TestLexer(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.SrcPath, tt.Run)
+	}
+}
+
+func TestLexerPos(t *testing.T) {
+	tests := []struct {
+		file     string
+		index    int
+		expected token.Pos
+	}{
+		{
+			file:     "../testdata/stage_3/valid/add.c",
+			index:    0,
+			expected: token.Pos{Offset: 0, Line: 1, Col: 1},
+		},
+		{
+			file:     "../testdata/stage_3/valid/add.c",
+			index:    5,
+			expected: token.Pos{Offset: 18, Line: 2, Col: 6},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(filepath.Base(tt.file), func(t *testing.T) {
+			data, err := ioutil.ReadFile(tt.file)
+			assert.NilError(t, err)
+			toks := New(string(data)).Tokenize()
+			assert.Assert(t, tt.index < len(toks))
+			actual := toks[tt.index].Pos
+			assert.Equal(t, tt.expected, actual)
+		})
 	}
 }

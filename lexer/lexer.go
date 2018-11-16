@@ -9,7 +9,7 @@ import (
 
 type Lexer struct {
 	input string
-	next  int
+	index int
 	ch    byte
 	pos   token.Pos
 }
@@ -18,40 +18,43 @@ func New(input string) *Lexer {
 	return &Lexer{
 		input: input,
 		ch:    0,
-		next:  0,
+		index: -1,
 		pos:   token.Pos{-1, 1, 0},
 	}
 }
 
 func (l *Lexer) peek() byte {
-	if l.next >= len(l.input) {
+	next := l.index + 1
+	if next >= len(l.input) {
 		return 0
 	}
-	return l.input[l.next]
+	return l.input[next]
 }
 
 func (l *Lexer) unread() {
-	l.next--
-	l.ch = l.input[l.next-1]
+	l.index--
+	l.ch = l.input[l.index]
 }
 
 func (l *Lexer) read() byte {
 	// make sure there's more
-	if l.next >= len(l.input) {
+	if l.index+1 >= len(l.input) {
 		l.ch = 0
 		return 0
 	}
 	// update the current character
-	l.ch = l.input[l.next]
+	l.index++
+	l.ch = l.input[l.index]
 	// update the position
-	l.pos.Offset = l.next
+	l.pos.Offset = l.index
 	l.pos.Col++
-	if l.ch == '\n' || l.ch == '\r' {
+	switch {
+	case l.ch == '\r' && l.peek() == '\n':
+		// don't coun't \r\n as two separate newlines
+	case l.ch == '\n' || l.ch == '\r':
 		l.pos.Col = 1
 		l.pos.Line++
 	}
-	// update the index
-	l.next++
 	return l.ch
 }
 
