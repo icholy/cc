@@ -166,3 +166,37 @@ func (t *Ternary) Token() token.Token { return t.Tok }
 func (t *Ternary) String() string {
 	return fmt.Sprintf("Ternary(%s ? %s : %s)", t.Condition, t.Then, t.Else)
 }
+
+type For struct {
+	Tok       token.Token
+	Setup     Stmt
+	Condition Expr
+	Increment Expr
+	Body      Stmt
+}
+
+func (f *For) stmtNode()          {}
+func (f *For) Token() token.Token { return f.Tok }
+func (f *For) String() string {
+	return fmt.Sprintf("FOR(%s; %s; %s) %s", f.Setup, f.Condition, f.Increment, f.Body)
+}
+
+type While struct {
+	Tok       token.Token
+	Condition Expr
+	Body      Stmt
+}
+
+func (w *While) stmtNode()          {}
+func (w *While) Token() token.Token { return w.Tok }
+func (w *While) String() string     { return fmt.Sprintf("WHILE(%s) %s", w.Condition, w.Body) }
+
+type Do struct {
+	Tok       token.Token
+	Condition Expr
+	Body      Stmt
+}
+
+func (d *Do) stmtNode()          {}
+func (d *Do) Token() token.Token { return d.Tok }
+func (d *Do) String() string     { return fmt.Sprintf("DO %s WHILE(%s)", d.Body, d.Condition) }
