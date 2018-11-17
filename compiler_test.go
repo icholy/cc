@@ -108,7 +108,12 @@ func TestOutput(t *testing.T) {
 		{
 			Name:     "for_simple.c",
 			SrcPath:  "testdata/stage_8/valid/for_simple.c",
-			ExitCode: 0,
+			ExitCode: 100,
+		},
+		{
+			Name:     "for_variable_shadow.c",
+			SrcPath:  "testdata/stage_8/valid/for_variable_shadow.c",
+			ExitCode: 65,
 		},
 	}
 	for _, tt := range tests {

@@ -341,12 +341,9 @@ func (c *Compiler) assign(assign *ast.Assign) error {
 	if err := c.expr(assign.Value); err != nil {
 		return err
 	}
-	loc, err := c.scope.Local(assign.Var.Name)
+	loc, err := c.scope.DeclaredLocal(assign.Var.Name)
 	if err != nil {
 		return err
-	}
-	if !loc.Declared {
-		return fmt.Errorf("usage before declaration: %s", assign.Var.Name)
 	}
 	c.emitf("movl %%eax, %d(%%ebp)", loc.Offset)
 	return nil
