@@ -59,6 +59,16 @@ func (s *Scope) FindLoop() (*Loop, error) {
 	return s.Parent.FindLoop()
 }
 
+func (s *Scope) DeclaredLocal(name string) (*Local, error) {
+	if loc, ok := s.Locals[name]; ok && loc.Declared {
+		return loc, nil
+	}
+	if s.Parent != nil {
+		return s.Parent.Local(name)
+	}
+	return nil, fmt.Errorf("undefined: %s", name)
+}
+
 func (s *Scope) Local(name string) (*Local, error) {
 	if loc, ok := s.Locals[name]; ok {
 		return loc, nil
@@ -346,12 +356,9 @@ func (c *Compiler) assign(assign *ast.Assign) error {
 }
 
 func (c *Compiler) variable(v *ast.Var) error {
-	loc, err := c.scope.Local(v.Name)
+	loc, err := c.scope.DeclaredLocal(v.Name)
 	if err != nil {
 		return err
-	}
-	if !loc.Declared {
-		return fmt.Errorf("use before declaration: %s", v.Name)
 	}
 	c.emitf("movl %d(%%ebp), %%eax", loc.Offset)
 	return nil
