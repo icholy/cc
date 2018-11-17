@@ -157,6 +157,8 @@ func (c *Compiler) stmt(stmt ast.Stmt) error {
 		return c.expr(stmt.Expr)
 	case *ast.While:
 		return c.whileLoop(stmt)
+	case *ast.Do:
+		return c.doLoop(stmt)
 	default:
 		return fmt.Errorf("cannot compile: %s", stmt)
 	}
@@ -173,6 +175,22 @@ func (c *Compiler) whileLoop(w *ast.While) error {
 	if err := c.stmt(w.Body); err != nil {
 		return err
 	}
+	c.emitf("jmp %s", start)
+	c.emitf("%s:", end)
+	return nil
+}
+
+func (c *Compiler) doLoop(d *ast.Do) error {
+	start, end := c.label(), c.label()
+	c.emitf("%s:", start)
+	if err := c.stmt(d.Body); err != nil {
+		return err
+	}
+	if err := c.expr(d.Condition); err != nil {
+		return err
+	}
+	c.emitf("cmpl $0, %%eax")
+	c.emitf("je %s", end)
 	c.emitf("jmp %s", start)
 	c.emitf("%s:", end)
 	return nil
