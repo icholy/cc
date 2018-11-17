@@ -118,7 +118,7 @@ func TestOutput(t *testing.T) {
 		{
 			Name:     "fib.c",
 			SrcPath:  "testdata/stage_8/valid/fib.c",
-			ExitCode: 109,
+			ExitCode: 6765,
 		},
 	}
 	for _, tt := range tests {
