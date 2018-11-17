@@ -3,7 +3,6 @@ package parser
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/icholy/cc/ast"
 	"github.com/icholy/cc/lexer"
@@ -115,12 +114,9 @@ func (p *Parser) funcDec() (*ast.FuncDec, error) {
 }
 
 func (p *Parser) trace(s string) func() {
-	indent := strings.Repeat(" ", p.level)
-	fmt.Println(indent, s, p.cur)
+	// fmt.Println(strings.Repeat(" ", p.level), s, p.cur)
 	p.level++
-	return func() {
-		p.level--
-	}
+	return func() { p.level-- }
 }
 
 func (p *Parser) stmt() (ast.Stmt, error) {
@@ -298,7 +294,19 @@ func (p *Parser) forLoop() (*ast.For, error) {
 	if err != nil {
 		return nil, err
 	}
-	f.Increment, err = p.expr(true)
+	if err := p.expect(token.SEMICOLON); err != nil {
+		return nil, err
+	}
+	if !p.cur.Is(token.RPAREN) {
+		f.Increment, err = p.expr(true)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if err := p.expect(token.RPAREN); err != nil {
+		return nil, err
+	}
+	f.Body, err = p.stmt()
 	if err != nil {
 		return nil, err
 	}
@@ -342,9 +350,13 @@ func (p *Parser) expr(nullable bool) (ast.Expr, error) {
 		if !nullable {
 			return nil, fmt.Errorf("cannot use null expression")
 		}
-		return &ast.Null{Tok: p.cur}, nil
+		return p.null(), nil
 	}
 	return p.assign()
+}
+
+func (p *Parser) null() ast.Expr {
+	return &ast.Null{Tok: p.cur}
 }
 
 func (p *Parser) variable() (*ast.Var, error) {
