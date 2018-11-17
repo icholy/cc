@@ -104,15 +104,15 @@ func (c *Compiler) label(name string) string {
 	return fmt.Sprintf("%s_L%d", name, c.labels)
 }
 
-func (c *Compiler) scopePush() {
+func (c *Compiler) enterScope() {
 	c.scope = &Scope{
 		Parent: c.scope,
 		Locals: make(map[string]*Local),
 	}
 }
 
-func (c *Compiler) scopePushLoop() *Loop {
-	c.scopePush()
+func (c *Compiler) enterLoopScope() *Loop {
+	c.enterScope()
 	c.scope.Loop = &Loop{
 		Break:    c.label("break"),
 		Continue: c.label("continue"),
@@ -120,15 +120,8 @@ func (c *Compiler) scopePushLoop() *Loop {
 	return c.scope.Loop
 }
 
-func (c *Compiler) scopePop() {
+func (c *Compiler) leaveScope() {
 	c.scope = c.scope.Parent
-}
-
-func (c *Compiler) scopeDeclare(stmt ast.Stmt) error {
-	if dec, ok := stmt.(*ast.VarDec); ok {
-		return c.scope.Declare(dec)
-	}
-	return nil
 }
 
 func (c *Compiler) Assembly() string {
@@ -224,9 +217,8 @@ func (c *Compiler) stmt(stmt ast.Stmt) error {
 }
 
 func (c *Compiler) forLoop(f *ast.For) error {
-	loop := c.scopePushLoop()
-	defer c.scopePop()
-	if err := c.scopeDeclare(f.Setup); err != nil {
+	loop := c.enterLoopScope()
+	if err := c.allocate(f.Setup); err != nil {
 		return err
 	}
 	skipInc := c.label("for_skip_inc")
@@ -249,12 +241,13 @@ func (c *Compiler) forLoop(f *ast.For) error {
 	}
 	c.emitf("jmp %s", loop.Continue)
 	c.emitf("%s:", loop.Break)
+	c.deallocate()
+	c.leaveScope()
 	return nil
 }
 
 func (c *Compiler) whileLoop(w *ast.While) error {
-	loop := c.scopePushLoop()
-	defer c.scopePop()
+	loop := c.enterLoopScope()
 	c.emitf("%s:", loop.Continue)
 	if err := c.expr(w.Condition); err != nil {
 		return err
@@ -266,12 +259,12 @@ func (c *Compiler) whileLoop(w *ast.While) error {
 	}
 	c.emitf("jmp %s", loop.Continue)
 	c.emitf("%s:", loop.Break)
+	c.leaveScope()
 	return nil
 }
 
 func (c *Compiler) doLoop(d *ast.Do) error {
-	loop := c.scopePushLoop()
-	defer c.scopePop()
+	loop := c.enterLoopScope()
 	c.emitf("%s:", loop.Continue)
 	if err := c.stmt(d.Body); err != nil {
 		return err
@@ -283,6 +276,7 @@ func (c *Compiler) doLoop(d *ast.Do) error {
 	c.emitf("je %s", loop.Break)
 	c.emitf("jmp %s", loop.Continue)
 	c.emitf("%s:", loop.Break)
+	c.leaveScope()
 	return nil
 }
 
@@ -451,24 +445,34 @@ func (c *Compiler) prologue() {
 	c.emitf("ret")
 }
 
-func (c *Compiler) block(b *ast.Block) error {
-	c.scopePush()
-	defer c.scopePop()
-
-	// find all the variable declarations before compiling
-	for _, stmt := range b.Statements {
-		if err := c.scopeDeclare(stmt); err != nil {
-			return err
+func (c *Compiler) allocate(stmts ...ast.Stmt) error {
+	for _, s := range stmts {
+		if dec, ok := s.(*ast.VarDec); ok {
+			if err := c.scope.Declare(dec); err != nil {
+				return err
+			}
 		}
 	}
-
 	c.emitf("subl $%d, %%esp", -c.scope.Offset)
+	return nil
+}
+
+func (c *Compiler) deallocate() {
+	c.emitf("addl $%d, %%esp", -c.scope.Offset)
+}
+
+func (c *Compiler) block(b *ast.Block) error {
+	c.enterScope()
+	if err := c.allocate(b.Statements...); err != nil {
+		return err
+	}
 	for _, stmt := range b.Statements {
 		if err := c.stmt(stmt); err != nil {
 			return err
 		}
 	}
-	c.emitf("addl $%d, %%esp", -c.scope.Offset)
+	c.deallocate()
+	c.leaveScope()
 	return nil
 }
 
