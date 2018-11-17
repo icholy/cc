@@ -79,11 +79,11 @@ func (s *Scope) Local(name string) (*Local, error) {
 	return nil, fmt.Errorf("undefined: %s", name)
 }
 
-func (s *Scope) ParentOffset() int {
+func (s *Scope) TotalOffset() int {
 	if s.Parent == nil {
-		return 0
+		return s.Offset
 	}
-	return s.Parent.Offset
+	return s.Parent.TotalOffset() + s.Offset
 }
 
 func (s *Scope) Declare(d *ast.VarDec) error {
@@ -93,7 +93,7 @@ func (s *Scope) Declare(d *ast.VarDec) error {
 	}
 	s.Locals[d.Name] = &Local{
 		Name:     d.Name,
-		Offset:   s.ParentOffset() + s.Offset,
+		Offset:   s.TotalOffset(),
 		Declared: false,
 	}
 	return nil
@@ -344,6 +344,9 @@ func (c *Compiler) assign(assign *ast.Assign) error {
 	loc, err := c.scope.Local(assign.Var.Name)
 	if err != nil {
 		return err
+	}
+	if !loc.Declared {
+		return fmt.Errorf("usage before declaration: %s", assign.Var.Name)
 	}
 	c.emitf("movl %%eax, %d(%%ebp)", loc.Offset)
 	return nil
