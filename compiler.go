@@ -342,10 +342,13 @@ func (c *Compiler) binaryOp(binary *ast.BinaryOp) error {
 	case "*":
 		c.emitf("imul %%ecx, %%eax")
 	case "/":
+		c.emitf("xchg %%eax, %%ecx")
+		c.emitf("movl $0, %%edx")
 		c.emitf("idiv %%ecx, %%eax")
 	case "%":
+		c.emitf("xchg %%eax, %%ecx")
 		c.emitf("movl $0, %%edx")
-		c.emitf("idiv %%ecx")
+		c.emitf("idiv %%ecx, %%eax")
 		c.emitf("movl %%edx, %%eax")
 	case "==":
 		c.emitf("cmpl %%eax, %%ecx")
