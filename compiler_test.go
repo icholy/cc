@@ -105,6 +105,11 @@ func TestOutput(t *testing.T) {
 			SrcPath:  "testdata/stage_8/valid/do_while.c",
 			ExitCode: 16,
 		},
+		{
+			Name:     "for_simple.c",
+			SrcPath:  "testdata/stage_8/valid/for_simple.c",
+			ExitCode: 0,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
