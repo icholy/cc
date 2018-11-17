@@ -115,6 +115,11 @@ func TestOutput(t *testing.T) {
 			SrcPath:  "testdata/stage_8/valid/for_variable_shadow.c",
 			ExitCode: 65,
 		},
+		{
+			Name:     "fib.c",
+			SrcPath:  "testdata/stage_8/valid/fib.c",
+			ExitCode: 109,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
