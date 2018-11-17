@@ -118,6 +118,53 @@ func TestAST(t *testing.T) {
 			},
 		},
 	})
+	AssertEqualAST(t, "../testdata/stage_8/valid/for.c", &ast.Program{
+		Body: &ast.FuncDec{
+			Name: "main",
+			Body: &ast.Block{
+				Statements: []ast.Stmt{
+					&ast.VarDec{
+						Name:  "a",
+						Value: &ast.IntLit{Value: 0},
+					},
+					&ast.For{
+						Setup: &ast.ExprStmt{
+							Expr: &ast.Assign{
+								Var:   &ast.Var{Name: "a"},
+								Value: &ast.IntLit{Value: 0},
+							},
+						},
+						Condition: &ast.BinaryOp{
+							Op:    "<",
+							Left:  &ast.Var{Name: "a"},
+							Right: &ast.IntLit{Value: 3},
+						},
+						Increment: &ast.Assign{
+							Var: &ast.Var{Name: "a"},
+							Value: &ast.BinaryOp{
+								Op:    "+",
+								Left:  &ast.Var{Name: "a"},
+								Right: &ast.IntLit{Value: 1},
+							},
+						},
+						Body: &ast.ExprStmt{
+							Expr: &ast.Assign{
+								Var: &ast.Var{Name: "a"},
+								Value: &ast.BinaryOp{
+									Op:    "*",
+									Left:  &ast.Var{Name: "a"},
+									Right: &ast.IntLit{Value: 2},
+								},
+							},
+						},
+					},
+					&ast.Ret{
+						Value: &ast.Var{Name: "a"},
+					},
+				},
+			},
+		},
+	})
 }
 
 type validityTest struct {
