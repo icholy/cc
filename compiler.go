@@ -99,9 +99,9 @@ func (s *Scope) Declare(d *ast.VarDec) error {
 	return nil
 }
 
-func (c *Compiler) label() string {
+func (c *Compiler) label(name string) string {
 	c.labels++
-	return fmt.Sprintf("_L%d", c.labels)
+	return fmt.Sprintf("%s_L%d", name, c.labels)
 }
 
 func (c *Compiler) scopePush() {
@@ -114,8 +114,8 @@ func (c *Compiler) scopePush() {
 func (c *Compiler) scopePushLoop() *Loop {
 	c.scopePush()
 	c.scope.Loop = &Loop{
-		Break:    fmt.Sprintf("_break_%s", c.label()),
-		Continue: fmt.Sprintf("_continue_%s", c.label()),
+		Break:    c.label("break"),
+		Continue: c.label("continue"),
 	}
 	return c.scope.Loop
 }
@@ -229,7 +229,7 @@ func (c *Compiler) forLoop(f *ast.For) error {
 	if err := c.scopeDeclare(f.Setup); err != nil {
 		return err
 	}
-	skipInc := c.label()
+	skipInc := c.label("for_skip_inc")
 	if err := c.stmt(f.Setup); err != nil {
 		return err
 	}
@@ -304,7 +304,7 @@ func (c *Compiler) varDec(dec *ast.VarDec) error {
 }
 
 func (c *Compiler) ternary(tern *ast.Ternary) error {
-	afterThen, end := c.label(), c.label()
+	afterThen, end := c.label("tern_after_then"), c.label("tern_end")
 	if err := c.expr(tern.Condition); err != nil {
 		return err
 	}
@@ -323,7 +323,7 @@ func (c *Compiler) ternary(tern *ast.Ternary) error {
 }
 
 func (c *Compiler) _if(ife *ast.If) error {
-	afterThen, end := c.label(), c.label()
+	afterThen, end := c.label("if_after_then"), c.label("if_end")
 	if err := c.expr(ife.Condition); err != nil {
 		return err
 	}
