@@ -90,7 +90,7 @@ func (c *Compiler) scopePop() {
 	c.scope = c.scope.Parent
 }
 
-func (c *Compiler) scopeDecVar(stmt ast.Stmt) error {
+func (c *Compiler) scopeDeclare(stmt ast.Stmt) error {
 	if dec, ok := stmt.(*ast.VarDec); ok {
 		return c.scope.Declare(dec)
 	}
@@ -176,7 +176,7 @@ func (c *Compiler) stmt(stmt ast.Stmt) error {
 func (c *Compiler) forLoop(f *ast.For) error {
 	c.scopePush()
 	defer c.scopePop()
-	if err := c.scopeDecVar(f.Setup); err != nil {
+	if err := c.scopeDeclare(f.Setup); err != nil {
 		return err
 	}
 	loop, cond, quit := c.label(), c.label(), c.label()
@@ -401,7 +401,7 @@ func (c *Compiler) block(b *ast.Block) error {
 
 	// find all the variable declarations before compiling
 	for _, stmt := range b.Statements {
-		if err := c.scopeDecVar(stmt); err != nil {
+		if err := c.scopeDeclare(stmt); err != nil {
 			return err
 		}
 	}
