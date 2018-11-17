@@ -38,10 +38,25 @@ type Local struct {
 	Offset   int
 }
 
+type Loop struct {
+	Break, Continue string
+}
+
 type Scope struct {
 	Parent *Scope
 	Offset int
 	Locals map[string]*Local
+	Loop   *Loop
+}
+
+func (s *Scope) FindLoop() (*Loop, error) {
+	if s.Loop != nil {
+		return s.Loop, nil
+	}
+	if s.Parent == nil {
+		return nil, fmt.Errorf("not inside loop")
+	}
+	return s.Parent.FindLoop()
 }
 
 func (s *Scope) Local(name string) (*Local, error) {
@@ -84,6 +99,15 @@ func (c *Compiler) scopePush() {
 		Parent: c.scope,
 		Locals: make(map[string]*Local),
 	}
+}
+
+func (c *Compiler) scopePushLoop() *Loop {
+	c.scopePush()
+	c.scope.Loop = &Loop{
+		Break:    c.label(),
+		Continue: c.label(),
+	}
+	return c.scope.Loop
 }
 
 func (c *Compiler) scopePop() {
@@ -170,59 +194,75 @@ func (c *Compiler) stmt(stmt ast.Stmt) error {
 		return c.doLoop(stmt)
 	case *ast.For:
 		return c.forLoop(stmt)
+	case *ast.Break:
+		loop, err := c.scope.FindLoop()
+		if err != nil {
+			return err
+		}
+		c.emitf("jmp %s", loop.Break)
+		return nil
+	case *ast.Continue:
+		loop, err := c.scope.FindLoop()
+		if err != nil {
+			return err
+		}
+		c.emitf("jmp %s", loop.Continue)
+		return nil
 	default:
 		return fmt.Errorf("cannot compile: %s", stmt)
 	}
 }
 
 func (c *Compiler) forLoop(f *ast.For) error {
-	c.scopePush()
+	loop := c.scopePushLoop()
 	defer c.scopePop()
 	if err := c.scopeDeclare(f.Setup); err != nil {
 		return err
 	}
-	loop, cond, quit := c.label(), c.label(), c.label()
+	skipInc := c.label()
 	if err := c.stmt(f.Setup); err != nil {
 		return err
 	}
-	c.emitf("jmp %s", cond)
-	c.emitf("%s:", loop)
+	c.emitf("jmp %s", skipInc)
+	c.emitf("%s:", loop.Continue)
 	if err := c.expr(f.Increment); err != nil {
 		return err
 	}
-	c.emitf("%s:", cond)
+	c.emitf("%s:", skipInc)
 	if err := c.expr(f.Condition); err != nil {
 		return err
 	}
 	c.emitf("cmpl $0, %%eax")
-	c.emitf("je %s", quit)
+	c.emitf("je %s", loop.Break)
 	if err := c.stmt(f.Body); err != nil {
 		return err
 	}
-	c.emitf("jmp %s", loop)
-	c.emitf("%s:", quit)
+	c.emitf("jmp %s", loop.Continue)
+	c.emitf("%s:", loop.Break)
 	return nil
 }
 
 func (c *Compiler) whileLoop(w *ast.While) error {
-	start, end := c.label(), c.label()
-	c.emitf("%s:", start)
+	loop := c.scopePushLoop()
+	defer c.scopePop()
+	c.emitf("%s:", loop.Continue)
 	if err := c.expr(w.Condition); err != nil {
 		return err
 	}
 	c.emitf("cmpl $0, %%eax")
-	c.emitf("je %s", end)
+	c.emitf("je %s", loop.Break)
 	if err := c.stmt(w.Body); err != nil {
 		return err
 	}
-	c.emitf("jmp %s", start)
-	c.emitf("%s:", end)
+	c.emitf("jmp %s", loop.Continue)
+	c.emitf("%s:", loop.Break)
 	return nil
 }
 
 func (c *Compiler) doLoop(d *ast.Do) error {
-	start, end := c.label(), c.label()
-	c.emitf("%s:", start)
+	loop := c.scopePushLoop()
+	defer c.scopePop()
+	c.emitf("%s:", loop.Continue)
 	if err := c.stmt(d.Body); err != nil {
 		return err
 	}
@@ -230,9 +270,9 @@ func (c *Compiler) doLoop(d *ast.Do) error {
 		return err
 	}
 	c.emitf("cmpl $0, %%eax")
-	c.emitf("je %s", end)
-	c.emitf("jmp %s", start)
-	c.emitf("%s:", end)
+	c.emitf("je %s", loop.Break)
+	c.emitf("jmp %s", loop.Continue)
+	c.emitf("%s:", loop.Break)
 	return nil
 }
 
