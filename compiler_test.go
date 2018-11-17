@@ -85,6 +85,16 @@ func TestOutput(t *testing.T) {
 			SrcPath:  "testdata/stage_7/valid/nested_scope.c",
 			ExitCode: 4,
 		},
+		{
+			Name:     "while_single_statement.c",
+			SrcPath:  "testdata/stage_8/valid/while_single_statement.c",
+			ExitCode: 6,
+		},
+		{
+			Name:     "while_multi_statement.c",
+			SrcPath:  "testdata/stage_8/valid/while_multi_statement.c",
+			ExitCode: 6,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
@@ -106,6 +116,7 @@ func TestStages(t *testing.T) {
 	AssertValid(t, 5)
 	AssertValid(t, 6)
 	AssertValid(t, 7)
+	AssertValid(t, 8)
 }
 
 func AssertValid(t *testing.T, stage int) {
