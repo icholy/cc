@@ -344,7 +344,9 @@ func (c *Compiler) binaryOp(binary *ast.BinaryOp) error {
 	case "/":
 		c.emitf("idiv %%ecx, %%eax")
 	case "%":
-		panic("modulo not implemented")
+		c.emitf("movl $0, %%edx")
+		c.emitf("idiv %%ecx")
+		c.emitf("movl %%edx, %%eax")
 	case "==":
 		c.emitf("cmpl %%eax, %%ecx")
 		c.emitf("movl $0, %%eax")

@@ -31,12 +31,17 @@ func TestOutput(t *testing.T) {
 			ExitCode: 0,
 		},
 		{
-			Name:     "add",
+			Name:     "precedence",
 			SrcPath:  "testdata/stage_3/valid/precedence.c",
 			ExitCode: 14,
 		},
 		{
-			Name:     "add",
+			Name:     "mod",
+			SrcPath:  "testdata/stage_3/valid/mod.c",
+			ExitCode: 4,
+		},
+		{
+			Name:     "or_true",
 			SrcPath:  "testdata/stage_4/valid/or_true.c",
 			ExitCode: 1,
 		},
