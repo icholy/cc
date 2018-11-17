@@ -306,6 +306,8 @@ func (p *Parser) forLoop() (*ast.For, error) {
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		f.Increment = p.null()
 	}
 	if err := p.expect(token.RPAREN); err != nil {
 		return nil, err

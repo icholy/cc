@@ -118,6 +118,8 @@ func (c *Compiler) expr(expr ast.Expr) error {
 	switch expr := expr.(type) {
 	case *ast.IntLit:
 		c.emitf("movl $%d, %%eax", expr.Value)
+	case *ast.Null:
+		c.emitf("movl $1, %%eax")
 	case *ast.UnaryOp:
 		return c.unaryOp(expr)
 	case *ast.BinaryOp:
