@@ -90,6 +90,13 @@ func (c *Compiler) scopePop() {
 	c.scope = c.scope.Parent
 }
 
+func (c *Compiler) scopeDecVar(stmt ast.Stmt) error {
+	if dec, ok := stmt.(*ast.VarDec); ok {
+		return c.scope.Declare(dec)
+	}
+	return nil
+}
+
 func (c *Compiler) Assembly() string {
 	return c.asm.String()
 }
@@ -159,9 +166,40 @@ func (c *Compiler) stmt(stmt ast.Stmt) error {
 		return c.whileLoop(stmt)
 	case *ast.Do:
 		return c.doLoop(stmt)
+	case *ast.For:
+		return c.forLoop(stmt)
 	default:
 		return fmt.Errorf("cannot compile: %s", stmt)
 	}
+}
+
+func (c *Compiler) forLoop(f *ast.For) error {
+	c.scopePush()
+	defer c.scopePop()
+	if err := c.scopeDecVar(f.Setup); err != nil {
+		return err
+	}
+	loop, cond, quit := c.label(), c.label(), c.label()
+	if err := c.stmt(f.Setup); err != nil {
+		return err
+	}
+	c.emitf("jmp %s", cond)
+	c.emitf("%s:", loop)
+	if err := c.expr(f.Increment); err != nil {
+		return err
+	}
+	c.emitf("%s:", cond)
+	if err := c.expr(f.Condition); err != nil {
+		return err
+	}
+	c.emitf("cmpl $0, %%eax")
+	c.emitf("je %s", quit)
+	if err := c.stmt(f.Body); err != nil {
+		return err
+	}
+	c.emitf("jmp %s", loop)
+	c.emitf("%s:", quit)
+	return nil
 }
 
 func (c *Compiler) whileLoop(w *ast.While) error {
@@ -363,10 +401,8 @@ func (c *Compiler) block(b *ast.Block) error {
 
 	// find all the variable declarations before compiling
 	for _, stmt := range b.Statements {
-		if dec, ok := stmt.(*ast.VarDec); ok {
-			if err := c.scope.Declare(dec); err != nil {
-				return err
-			}
+		if err := c.scopeDecVar(stmt); err != nil {
+			return err
 		}
 	}
 

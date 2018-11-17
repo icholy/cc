@@ -33,6 +33,10 @@ func New(l *lexer.Lexer) *Parser {
 	return p
 }
 
+func (p *Parser) Context() string {
+	return p.lex.Context(p.cur)
+}
+
 func (p *Parser) next() {
 	p.cur = p.peek
 	p.peek = p.lex.Lex()
