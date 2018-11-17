@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/icholy/cc/ast"
 	"github.com/icholy/cc/lexer"
@@ -10,9 +11,10 @@ import (
 )
 
 type Parser struct {
-	peek token.Token
-	cur  token.Token
-	lex  *lexer.Lexer
+	peek  token.Token
+	cur   token.Token
+	lex   *lexer.Lexer
+	level int
 }
 
 func Parse(input string) (*ast.Program, error) {
@@ -46,7 +48,7 @@ func (p *Parser) expect(typ token.TokenType) error {
 }
 
 func (p *Parser) Parse() (*ast.Program, error) {
-	p.trace("Parse")
+	defer p.trace("Parse")()
 	prog := &ast.Program{Tok: p.cur}
 	fn, err := p.funcDec()
 	if err != nil {
@@ -59,8 +61,8 @@ func (p *Parser) Parse() (*ast.Program, error) {
 	return prog, nil
 }
 
-func (p *Parser) blockStmt() (ast.Stmt, error) {
-	p.trace("BlockStmt")
+func (p *Parser) withVarDec() (ast.Stmt, error) {
+	defer p.trace("StmtWithVarDec")()
 	switch {
 	case p.cur.Is(token.INT_TYPE):
 		return p.varDec()
@@ -70,13 +72,13 @@ func (p *Parser) blockStmt() (ast.Stmt, error) {
 }
 
 func (p *Parser) block() (*ast.Block, error) {
-	p.trace("Block")
+	defer p.trace("Block")()
 	if err := p.expect(token.LBRACE); err != nil {
 		return nil, err
 	}
 	block := &ast.Block{Tok: p.cur}
 	for !p.cur.OneOf(token.RBRACE, token.EOF) {
-		stmt, err := p.blockStmt()
+		stmt, err := p.withVarDec()
 		if err != nil {
 			return nil, err
 		}
@@ -89,7 +91,7 @@ func (p *Parser) block() (*ast.Block, error) {
 }
 
 func (p *Parser) funcDec() (*ast.FuncDec, error) {
-	p.trace("FuncDec")
+	defer p.trace("FuncDec")()
 	fd := &ast.FuncDec{Tok: p.cur}
 	if err := p.expect(token.INT_TYPE); err != nil {
 		return nil, err
@@ -112,12 +114,17 @@ func (p *Parser) funcDec() (*ast.FuncDec, error) {
 	return fd, nil
 }
 
-func (p *Parser) trace(s string) {
-	// fmt.Println(s, p.cur)
+func (p *Parser) trace(s string) func() {
+	indent := strings.Repeat(" ", p.level)
+	fmt.Println(indent, s, p.cur)
+	p.level++
+	return func() {
+		p.level--
+	}
 }
 
 func (p *Parser) stmt() (ast.Stmt, error) {
-	p.trace("Stmt")
+	defer p.trace("Stmt")()
 	switch {
 	case p.cur.Is(token.LBRACE):
 		return p.block()
@@ -129,19 +136,19 @@ func (p *Parser) stmt() (ast.Stmt, error) {
 		return p.whileLoop()
 	case p.cur.Is(token.DO):
 		return p.doLoop()
+	case p.cur.Is(token.FOR):
+		return p.forLoop()
 	case p.cur.Is(token.CONTINUE):
 		return p._continue()
 	case p.cur.Is(token.BREAK):
 		return p._break()
-	case p.cur.Is(token.SEMICOLON):
-		return p.null()
 	default:
 		return p.exprStmt()
 	}
 }
 
 func (p *Parser) varDec() (*ast.VarDec, error) {
-	p.trace("VarDec")
+	defer p.trace("VarDec")()
 	decl := &ast.VarDec{Tok: p.cur}
 	if err := p.expect(token.INT_TYPE); err != nil {
 		return nil, err
@@ -152,7 +159,7 @@ func (p *Parser) varDec() (*ast.VarDec, error) {
 	}
 	if p.cur.Is(token.ASSIGN) {
 		p.next()
-		value, err := p.expr()
+		value, err := p.expr(false)
 		if err != nil {
 			return nil, err
 		}
@@ -165,9 +172,9 @@ func (p *Parser) varDec() (*ast.VarDec, error) {
 }
 
 func (p *Parser) exprStmt() (*ast.ExprStmt, error) {
-	p.trace("ExprStmt")
+	defer p.trace("ExprStmt")()
 	stmt := &ast.ExprStmt{Tok: p.cur}
-	expr, err := p.expr()
+	expr, err := p.expr(true)
 	if err != nil {
 		return nil, err
 	}
@@ -178,15 +185,8 @@ func (p *Parser) exprStmt() (*ast.ExprStmt, error) {
 	return stmt, nil
 }
 
-func (p *Parser) null() (*ast.Null, error) {
-	n := &ast.Null{Tok: p.cur}
-	if err := p.expect(token.SEMICOLON); err != nil {
-		return nil, err
-	}
-	return n, nil
-}
-
 func (p *Parser) _break() (*ast.Break, error) {
+	defer p.trace("Break")()
 	b := &ast.Break{Tok: p.cur}
 	if err := p.expect(token.BREAK); err != nil {
 		return nil, err
@@ -198,6 +198,7 @@ func (p *Parser) _break() (*ast.Break, error) {
 }
 
 func (p *Parser) _continue() (*ast.Continue, error) {
+	defer p.trace("Continue")()
 	c := &ast.Continue{Tok: p.cur}
 	if err := p.expect(token.CONTINUE); err != nil {
 		return nil, err
@@ -209,12 +210,12 @@ func (p *Parser) _continue() (*ast.Continue, error) {
 }
 
 func (p *Parser) ret() (*ast.Ret, error) {
-	p.trace("Ret")
+	defer p.trace("Ret")()
 	ret := &ast.Ret{Tok: p.cur}
 	if err := p.expect(token.RETURN); err != nil {
 		return nil, err
 	}
-	expr, err := p.expr()
+	expr, err := p.expr(false)
 	if err != nil {
 		return nil, err
 	}
@@ -226,6 +227,7 @@ func (p *Parser) ret() (*ast.Ret, error) {
 }
 
 func (p *Parser) whileLoop() (*ast.While, error) {
+	defer p.trace("While")()
 	w := &ast.While{Tok: p.cur}
 	if err := p.expect(token.WHILE); err != nil {
 		return nil, err
@@ -234,7 +236,7 @@ func (p *Parser) whileLoop() (*ast.While, error) {
 		return nil, err
 	}
 	var err error
-	w.Condition, err = p.expr()
+	w.Condition, err = p.expr(false)
 	if err != nil {
 		return nil, err
 	}
@@ -249,6 +251,7 @@ func (p *Parser) whileLoop() (*ast.While, error) {
 }
 
 func (p *Parser) doLoop() (*ast.Do, error) {
+	defer p.trace("Do")()
 	d := &ast.Do{Tok: p.cur}
 	if err := p.expect(token.DO); err != nil {
 		return nil, err
@@ -264,7 +267,7 @@ func (p *Parser) doLoop() (*ast.Do, error) {
 	if err := p.expect(token.LPAREN); err != nil {
 		return nil, err
 	}
-	d.Condition, err = p.expr()
+	d.Condition, err = p.expr(false)
 	if err != nil {
 		return nil, err
 	}
@@ -278,6 +281,7 @@ func (p *Parser) doLoop() (*ast.Do, error) {
 }
 
 func (p *Parser) forLoop() (*ast.For, error) {
+	defer p.trace("For")()
 	f := &ast.For{Tok: p.cur}
 	if err := p.expect(token.FOR); err != nil {
 		return nil, err
@@ -285,12 +289,24 @@ func (p *Parser) forLoop() (*ast.For, error) {
 	if err := p.expect(token.LPAREN); err != nil {
 		return nil, err
 	}
-	// TODO: continue here
+	var err error
+	f.Setup, err = p.withVarDec()
+	if err != nil {
+		return nil, err
+	}
+	f.Condition, err = p.expr(true)
+	if err != nil {
+		return nil, err
+	}
+	f.Increment, err = p.expr(true)
+	if err != nil {
+		return nil, err
+	}
 	return f, nil
 }
 
 func (p *Parser) _if() (*ast.If, error) {
-	p.trace("If")
+	defer p.trace("If")()
 	stmt := &ast.If{Tok: p.cur}
 	if err := p.expect(token.IF); err != nil {
 		return nil, err
@@ -299,7 +315,7 @@ func (p *Parser) _if() (*ast.If, error) {
 		return nil, err
 	}
 	var err error
-	stmt.Condition, err = p.expr()
+	stmt.Condition, err = p.expr(false)
 	if err != nil {
 		return nil, err
 	}
@@ -320,13 +336,19 @@ func (p *Parser) _if() (*ast.If, error) {
 	return stmt, nil
 }
 
-func (p *Parser) expr() (ast.Expr, error) {
-	p.trace("Expr")
+func (p *Parser) expr(nullable bool) (ast.Expr, error) {
+	defer p.trace("Expr")()
+	if p.cur.Is(token.SEMICOLON) {
+		if !nullable {
+			return nil, fmt.Errorf("cannot use null expression")
+		}
+		return &ast.Null{Tok: p.cur}, nil
+	}
 	return p.assign()
 }
 
 func (p *Parser) variable() (*ast.Var, error) {
-	p.trace("Var")
+	defer p.trace("Var")()
 	v := &ast.Var{Tok: p.cur, Name: p.cur.Text}
 	if err := p.expect(token.IDENT); err != nil {
 		return nil, err
@@ -335,7 +357,7 @@ func (p *Parser) variable() (*ast.Var, error) {
 }
 
 func (p *Parser) assign() (ast.Expr, error) {
-	p.trace("Assignment")
+	defer p.trace("Assignment")()
 	expr, err := p.ternary()
 	if err != nil {
 		return nil, err
@@ -351,11 +373,12 @@ func (p *Parser) assign() (ast.Expr, error) {
 		return nil, fmt.Errorf("cannot assign to: %s", expr)
 	}
 	assign.Var = v
-	assign.Value, err = p.expr()
+	assign.Value, err = p.expr(false)
 	return assign, nil
 }
 
 func (p *Parser) ternary() (ast.Expr, error) {
+	defer p.trace("Ternay")()
 	expr, err := p.or()
 	if err != nil {
 		return nil, err
@@ -365,7 +388,7 @@ func (p *Parser) ternary() (ast.Expr, error) {
 	}
 	tern := &ast.Ternary{Tok: p.cur, Condition: expr}
 	p.next()
-	tern.Then, err = p.expr()
+	tern.Then, err = p.expr(false)
 	if err != nil {
 		return nil, err
 	}
@@ -422,7 +445,7 @@ func (p *Parser) term() (ast.Expr, error) {
 }
 
 func (p *Parser) factor() (ast.Expr, error) {
-	p.trace("factor")
+	defer p.trace("factor")()
 	switch {
 	case p.cur.Is(token.IDENT):
 		return p.variable()
@@ -447,7 +470,7 @@ func (p *Parser) isUnaryOp(tok token.Token) bool {
 }
 
 func (p *Parser) unaryOp() (ast.Expr, error) {
-	p.trace("UnaryOp")
+	defer p.trace("UnaryOp")()
 	if !p.isUnaryOp(p.cur) {
 		return nil, fmt.Errorf("invalid unary op: %s", p.cur)
 	}
@@ -462,11 +485,11 @@ func (p *Parser) unaryOp() (ast.Expr, error) {
 }
 
 func (p *Parser) grouped() (ast.Expr, error) {
-	p.trace("Grouped")
+	defer p.trace("Grouped")()
 	if err := p.expect(token.LPAREN); err != nil {
 		return nil, err
 	}
-	expr, err := p.expr()
+	expr, err := p.expr(false)
 	if err != nil {
 		return nil, err
 	}
@@ -477,7 +500,7 @@ func (p *Parser) grouped() (ast.Expr, error) {
 }
 
 func (p *Parser) intLit() (*ast.IntLit, error) {
-	p.trace("IntLit")
+	defer p.trace("IntLit")()
 	lit := &ast.IntLit{Tok: p.cur}
 	value, err := strconv.Atoi(p.cur.Text)
 	if err != nil {

@@ -221,6 +221,17 @@ type Null struct {
 	Tok token.Token
 }
 
-func (n *Null) stmtNode()          {}
+func (n *Null) exprNode()          {}
 func (n *Null) Token() token.Token { return n.Tok }
 func (n *Null) String() string     { return "NULL" }
+
+func IsNull(n Node) bool {
+	switch n := n.(type) {
+	case *Null:
+		return true
+	case *ExprStmt:
+		return IsNull(n.Expr)
+	default:
+		return false
+	}
+}

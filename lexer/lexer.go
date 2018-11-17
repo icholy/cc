@@ -199,7 +199,7 @@ func (l *Lexer) isAlpha() bool {
 }
 
 func (l *Lexer) Context(tok token.Token) string {
-	col := tok.Pos.Col - 2
+	col := tok.Pos.Col - 3
 	if col < 0 {
 		col = 0
 	}
