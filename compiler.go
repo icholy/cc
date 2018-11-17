@@ -114,8 +114,8 @@ func (c *Compiler) scopePush() {
 func (c *Compiler) scopePushLoop() *Loop {
 	c.scopePush()
 	c.scope.Loop = &Loop{
-		Break:    c.label(),
-		Continue: c.label(),
+		Break:    fmt.Sprintf("_break_%s", c.label()),
+		Continue: fmt.Sprintf("_continue_%s", c.label()),
 	}
 	return c.scope.Loop
 }
@@ -376,11 +376,11 @@ func (c *Compiler) binaryOp(binary *ast.BinaryOp) error {
 	if err := c.expr(binary.Left); err != nil {
 		return err
 	}
-	c.emitf("push %%eax\n")
+	c.emitf("push %%eax")
 	if err := c.expr(binary.Right); err != nil {
 		return err
 	}
-	c.emitf("pop %%ecx\n")
+	c.emitf("pop %%ecx")
 	switch binary.Op {
 	case "+":
 		c.emitf("add %%ecx, %%eax")
