@@ -28,19 +28,20 @@ func TestValidParsing(t *testing.T) {
 
 func withRetval(retval ast.Expr) *ast.Program {
 	return &ast.Program{
-		Body: &ast.FuncDec{
-			Name: "main",
-			Body: &ast.Block{
-				Statements: []ast.Stmt{
-					&ast.Ret{
-						Value: retval,
+		Statements: []ast.Stmt{
+			&ast.FuncDec{
+				Name: "main",
+				Body: &ast.Block{
+					Statements: []ast.Stmt{
+						&ast.Ret{
+							Value: retval,
+						},
 					},
 				},
 			},
 		},
 	}
 }
-
 func TestAST(t *testing.T) {
 	AssertEqualAST(t, "../testdata/stage_1/valid/return_2.c", withRetval(&ast.IntLit{Value: 2}))
 	AssertEqualAST(t, "../testdata/stage_2/valid/neg.c", withRetval(&ast.UnaryOp{
@@ -97,21 +98,23 @@ func TestAST(t *testing.T) {
 		},
 	))
 	AssertEqualAST(t, "../testdata/stage_6/valid/else.c", &ast.Program{
-		Body: &ast.FuncDec{
-			Name: "main",
-			Body: &ast.Block{
-				Statements: []ast.Stmt{
-					&ast.VarDec{
-						Name:  "a",
-						Value: &ast.IntLit{Value: 0},
-					},
-					&ast.If{
-						Condition: &ast.Var{Name: "a"},
-						Then: &ast.Ret{
-							Value: &ast.IntLit{Value: 1},
+		Statements: []ast.Stmt{
+			&ast.FuncDec{
+				Name: "main",
+				Body: &ast.Block{
+					Statements: []ast.Stmt{
+						&ast.VarDec{
+							Name:  "a",
+							Value: &ast.IntLit{Value: 0},
 						},
-						Else: &ast.Ret{
-							Value: &ast.IntLit{Value: 2},
+						&ast.If{
+							Condition: &ast.Var{Name: "a"},
+							Then: &ast.Ret{
+								Value: &ast.IntLit{Value: 1},
+							},
+							Else: &ast.Ret{
+								Value: &ast.IntLit{Value: 2},
+							},
 						},
 					},
 				},
@@ -119,47 +122,49 @@ func TestAST(t *testing.T) {
 		},
 	})
 	AssertEqualAST(t, "../testdata/stage_8/valid/for.c", &ast.Program{
-		Body: &ast.FuncDec{
-			Name: "main",
-			Body: &ast.Block{
-				Statements: []ast.Stmt{
-					&ast.VarDec{
-						Name:  "a",
-						Value: &ast.IntLit{Value: 0},
-					},
-					&ast.For{
-						Setup: &ast.ExprStmt{
-							Expr: &ast.Assign{
-								Var:   &ast.Var{Name: "a"},
-								Value: &ast.IntLit{Value: 0},
+		Statements: []ast.Stmt{
+			&ast.FuncDec{
+				Name: "main",
+				Body: &ast.Block{
+					Statements: []ast.Stmt{
+						&ast.VarDec{
+							Name:  "a",
+							Value: &ast.IntLit{Value: 0},
+						},
+						&ast.For{
+							Setup: &ast.ExprStmt{
+								Expr: &ast.Assign{
+									Var:   &ast.Var{Name: "a"},
+									Value: &ast.IntLit{Value: 0},
+								},
 							},
-						},
-						Condition: &ast.BinaryOp{
-							Op:    "<",
-							Left:  &ast.Var{Name: "a"},
-							Right: &ast.IntLit{Value: 3},
-						},
-						Increment: &ast.Assign{
-							Var: &ast.Var{Name: "a"},
-							Value: &ast.BinaryOp{
-								Op:    "+",
+							Condition: &ast.BinaryOp{
+								Op:    "<",
 								Left:  &ast.Var{Name: "a"},
-								Right: &ast.IntLit{Value: 1},
+								Right: &ast.IntLit{Value: 3},
 							},
-						},
-						Body: &ast.ExprStmt{
-							Expr: &ast.Assign{
+							Increment: &ast.Assign{
 								Var: &ast.Var{Name: "a"},
 								Value: &ast.BinaryOp{
-									Op:    "*",
+									Op:    "+",
 									Left:  &ast.Var{Name: "a"},
-									Right: &ast.IntLit{Value: 2},
+									Right: &ast.IntLit{Value: 1},
+								},
+							},
+							Body: &ast.ExprStmt{
+								Expr: &ast.Assign{
+									Var: &ast.Var{Name: "a"},
+									Value: &ast.BinaryOp{
+										Op:    "*",
+										Left:  &ast.Var{Name: "a"},
+										Right: &ast.IntLit{Value: 2},
+									},
 								},
 							},
 						},
-					},
-					&ast.Ret{
-						Value: &ast.Var{Name: "a"},
+						&ast.Ret{
+							Value: &ast.Var{Name: "a"},
+						},
 					},
 				},
 			},

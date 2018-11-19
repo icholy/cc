@@ -23,13 +23,19 @@ type Expr interface {
 }
 
 type Program struct {
-	Tok  token.Token
-	Body Stmt
+	Tok        token.Token
+	Statements []Stmt
 }
 
 func (p *Program) stmtNode()          {}
 func (p *Program) Token() token.Token { return p.Tok }
-func (p *Program) String() string     { return p.Body.String() }
+func (p *Program) String() string {
+	stmts := make([]string, len(p.Statements))
+	for i, s := range p.Statements {
+		stmts[i] = s.String()
+	}
+	return strings.Join(stmts, "\n")
+}
 
 type IntLit struct {
 	Tok   token.Token

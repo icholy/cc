@@ -57,7 +57,7 @@ func (p *Parser) Parse() (*ast.Program, error) {
 	if err != nil {
 		return nil, err
 	}
-	prog.Body = fn
+	prog.Statements = append(prog.Statements, fn)
 	if err := p.expect(token.EOF); err != nil {
 		return nil, err
 	}
