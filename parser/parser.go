@@ -53,11 +53,13 @@ func (p *Parser) expect(typ token.TokenType) error {
 func (p *Parser) Parse() (*ast.Program, error) {
 	defer p.trace("Parse")()
 	prog := &ast.Program{Tok: p.cur}
-	fn, err := p.funcDec()
-	if err != nil {
-		return nil, err
+	for !p.cur.Is(token.EOF) {
+		fn, err := p.funcDec()
+		if err != nil {
+			return nil, err
+		}
+		prog.Statements = append(prog.Statements, fn)
 	}
-	prog.Statements = append(prog.Statements, fn)
 	if err := p.expect(token.EOF); err != nil {
 		return nil, err
 	}
@@ -106,14 +108,31 @@ func (p *Parser) funcDec() (*ast.FuncDec, error) {
 	if err := p.expect(token.LPAREN); err != nil {
 		return nil, err
 	}
+	for !p.cur.Is(token.RPAREN) {
+		if err := p.expect(token.INT_TYPE); err != nil {
+			return nil, err
+		}
+		fd.Params = append(fd.Params, p.cur.Text)
+		if err := p.expect(token.IDENT); err != nil {
+			return nil, err
+		}
+		if !p.cur.Is(token.COMMA) {
+			break
+		}
+		if err := p.expect(token.COMMA); err != nil {
+			return nil, err
+		}
+	}
 	if err := p.expect(token.RPAREN); err != nil {
 		return nil, err
 	}
-	block, err := p.block()
-	if err != nil {
-		return nil, err
+	if p.cur.Is(token.LBRACE) {
+		block, err := p.block()
+		if err != nil {
+			return nil, err
+		}
+		fd.Body = block
 	}
-	fd.Body = block
 	return fd, nil
 }
 
