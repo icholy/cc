@@ -388,6 +388,18 @@ func (c *Compiler) ret(ret *ast.Ret) error {
 }
 
 func (c *Compiler) call(call *ast.Call) error {
+
+	dec, ok := c.funcs[call.Name]
+	if !ok {
+		return fmt.Errorf("undefined function: %s", call.Name)
+	}
+	if len(dec.Params) != len(call.Arguments) {
+		return fmt.Errorf(
+			"bad call, wanted %d arguments, got %d: %s",
+			len(dec.Params), len(call.Arguments), call.Name,
+		)
+	}
+
 	for i := range call.Arguments {
 		arg := call.Arguments[len(call.Arguments)-i-1]
 		if err := c.expr(arg); err != nil {
