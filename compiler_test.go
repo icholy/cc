@@ -120,6 +120,21 @@ func TestOutput(t *testing.T) {
 			SrcPath:  "testdata/stage_8/valid/fib.c",
 			ExitCode: 6765,
 		},
+		{
+			Name:     "no_arg.c",
+			SrcPath:  "testdata/stage_9/valid/no_arg.c",
+			ExitCode: 3,
+		},
+		{
+			Name:     "multi_arg.c",
+			SrcPath:  "testdata/stage_9/valid/multi_arg.c",
+			ExitCode: 4,
+		},
+		{
+			Name:     "identity.c",
+			SrcPath:  "testdata/stage_9/valid/identity.c",
+			ExitCode: 4,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
