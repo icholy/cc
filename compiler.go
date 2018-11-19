@@ -51,6 +51,18 @@ type Scope struct {
 	Loop   *Loop
 }
 
+func (s *Scope) AddParam(index int, name string) error {
+	if _, ok := s.Locals[name]; ok {
+		return fmt.Errorf("duplicate parameter name: %s", name)
+	}
+	s.Locals[name] = &Local{
+		Name:     name,
+		Declared: true,
+		Offset:   (index + 1) * 4,
+	}
+	return nil
+}
+
 func (s *Scope) FindLoop() (*Loop, error) {
 	if s.Loop != nil {
 		return s.Loop, nil
@@ -138,7 +150,9 @@ func (c *Compiler) Compile(p *ast.Program) error {
 	for _, stmt := range p.Statements {
 		switch stmt := stmt.(type) {
 		case *ast.FuncDec:
-			return c.funcDec(stmt)
+			if err := c.funcDec(stmt); err != nil {
+				return err
+			}
 		default:
 			return fmt.Errorf("cannot compile: %s", stmt)
 		}
@@ -162,6 +176,8 @@ func (c *Compiler) expr(expr ast.Expr) error {
 		return c.assign(expr)
 	case *ast.Ternary:
 		return c.ternary(expr)
+	case *ast.Call:
+		return c.call(expr)
 	default:
 		return fmt.Errorf("cannot compile: %s", expr)
 	}
@@ -371,6 +387,19 @@ func (c *Compiler) ret(ret *ast.Ret) error {
 	return nil
 }
 
+func (c *Compiler) call(call *ast.Call) error {
+	for i := range call.Arguments {
+		arg := call.Arguments[len(call.Arguments)-i-1]
+		if err := c.expr(arg); err != nil {
+			return err
+		}
+		c.emitf("push %%eax")
+	}
+	c.emitf("call _%s", call.Name)
+	c.emitf("addl $%d, %%esp", len(call.Arguments)*4)
+	return nil
+}
+
 func (c *Compiler) binaryOp(binary *ast.BinaryOp) error {
 	if err := c.expr(binary.Left); err != nil {
 		return err
@@ -508,12 +537,18 @@ func (c *Compiler) funcDec(f *ast.FuncDec) error {
 	if f.Body == nil {
 		return nil
 	}
-
+	c.enterScope()
+	for i, p := range f.Params {
+		if err := c.scope.AddParam(i, p); err != nil {
+			return err
+		}
+	}
 	c.preable(f.Name)
 	if err := c.block(f.Body); err != nil {
 		return err
 	}
 	c.emitf("movl $0, %%eax")
 	c.prologue()
+	c.leaveScope()
 	return nil
 }
