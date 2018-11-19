@@ -58,7 +58,7 @@ func (s *Scope) AddParam(index int, name string) error {
 	s.Locals[name] = &Local{
 		Name:     name,
 		Declared: true,
-		Offset:   (index + 1) * 4,
+		Offset:   ((index + 1) * 4) + 4,
 	}
 	return nil
 }
@@ -405,7 +405,7 @@ func (c *Compiler) call(call *ast.Call) error {
 		if err := c.expr(arg); err != nil {
 			return err
 		}
-		c.emitf("push %%eax")
+		c.emitf("pushl %%eax")
 	}
 	c.emitf("call _%s", call.Name)
 	c.emitf("addl $%d, %%esp", len(call.Arguments)*4)
@@ -416,7 +416,7 @@ func (c *Compiler) binaryOp(binary *ast.BinaryOp) error {
 	if err := c.expr(binary.Left); err != nil {
 		return err
 	}
-	c.emitf("push %%eax")
+	c.emitf("pushl %%eax")
 	if err := c.expr(binary.Right); err != nil {
 		return err
 	}
@@ -481,7 +481,7 @@ func (c *Compiler) binaryOp(binary *ast.BinaryOp) error {
 func (c *Compiler) preable(name string) {
 	c.emitf(".globl _%s", name)
 	c.emitf("_%s:", name)
-	c.emitf("push %%ebp")
+	c.emitf("pushl %%ebp")
 	c.emitf("movl %%esp, %%ebp")
 }
 
