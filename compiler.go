@@ -133,12 +133,15 @@ func (c *Compiler) emitf(format string, args ...interface{}) {
 }
 
 func (c *Compiler) Compile(p *ast.Program) error {
-	switch stmt := p.Body.(type) {
-	case *ast.FuncDec:
-		return c.funcDec(stmt)
-	default:
-		return fmt.Errorf("cannot compile: %s", p.Body)
+	for _, stmt := range p.Statements {
+		switch stmt := stmt.(type) {
+		case *ast.FuncDec:
+			return c.funcDec(stmt)
+		default:
+			return fmt.Errorf("cannot compile: %s", stmt)
+		}
 	}
+	return nil
 }
 
 func (c *Compiler) expr(expr ast.Expr) error {
