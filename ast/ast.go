@@ -112,14 +112,17 @@ func (i *If) String() string {
 }
 
 type FuncDec struct {
-	Tok  token.Token
-	Name string
-	Body *Block
+	Tok    token.Token
+	Name   string
+	Params []string
+	Body   *Block
 }
 
 func (f *FuncDec) stmtNode()          {}
 func (f *FuncDec) Token() token.Token { return f.Tok }
-func (f *FuncDec) String() string     { return fmt.Sprintf("FuncDec(%s %s)", f.Name, f.Body) }
+func (f *FuncDec) String() string {
+	return fmt.Sprintf("FuncDec %s(%s) { %s }", f.Name, strings.Join(f.Params, ","), f.Body)
+}
 
 type Ret struct {
 	Tok   token.Token
