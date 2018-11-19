@@ -88,6 +88,7 @@ var bytetokens = map[byte]token.TokenType{
 	'?': token.QUESTION,
 	':': token.COLON,
 	'%': token.PERCENT,
+	',': token.COMMA,
 }
 
 var twobytetokens = map[string]token.TokenType{

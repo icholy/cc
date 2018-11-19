@@ -95,6 +95,33 @@ func (p *Parser) block() (*ast.Block, error) {
 	return block, nil
 }
 
+func (p *Parser) call() (*ast.Call, error) {
+	call := &ast.Call{Tok: p.cur, Name: p.cur.Text}
+	if err := p.expect(token.IDENT); err != nil {
+		return nil, err
+	}
+	if err := p.expect(token.LPAREN); err != nil {
+		return nil, err
+	}
+	for !p.cur.Is(token.RPAREN) {
+		arg, err := p.expr(false)
+		if err != nil {
+			return nil, err
+		}
+		call.Arguments = append(call.Arguments, arg)
+		if !p.cur.Is(token.COMMA) {
+			break
+		}
+		if err := p.expect(token.COMMA); err != nil {
+			return nil, err
+		}
+	}
+	if err := p.expect(token.RPAREN); err != nil {
+		return nil, err
+	}
+	return call, nil
+}
+
 func (p *Parser) funcDec() (*ast.FuncDec, error) {
 	defer p.trace("FuncDec")()
 	fd := &ast.FuncDec{Tok: p.cur}
@@ -132,6 +159,10 @@ func (p *Parser) funcDec() (*ast.FuncDec, error) {
 			return nil, err
 		}
 		fd.Body = block
+	} else {
+		if err := p.expect(token.SEMICOLON); err != nil {
+			return nil, err
+		}
 	}
 	return fd, nil
 }
@@ -484,6 +515,8 @@ func (p *Parser) term() (ast.Expr, error) {
 func (p *Parser) factor() (ast.Expr, error) {
 	defer p.trace("factor")()
 	switch {
+	case p.cur.Is(token.IDENT) && p.peek.Is(token.LPAREN):
+		return p.call()
 	case p.cur.Is(token.IDENT):
 		return p.variable()
 	case p.cur.Is(token.INT_LIT):
