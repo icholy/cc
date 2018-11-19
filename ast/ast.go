@@ -235,3 +235,19 @@ func IsNull(n Node) bool {
 		return false
 	}
 }
+
+type Call struct {
+	Tok       token.Token
+	Name      string
+	Arguments []Expr
+}
+
+func (c *Call) exprNode()          {}
+func (c *Call) Token() token.Token { return c.Tok }
+func (c *Call) String() string {
+	args := make([]string, len(c.Arguments))
+	for i, a := range c.Arguments {
+		args[i] = a.String()
+	}
+	return fmt.Sprintf("CALL %s (%s)", c.Name, strings.Join(args, ","))
+}

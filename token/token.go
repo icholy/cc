@@ -78,6 +78,7 @@ const (
 	BREAK     = "BREAK"
 	PERCENT   = "PERCENT"
 	CONTINUE  = "CONTINUE"
+	COMMA     = "COMMA"
 )
 
 var Keywords = map[string]TokenType{
