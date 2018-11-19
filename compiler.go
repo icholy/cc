@@ -23,12 +23,14 @@ func Compile(src string) (string, error) {
 type Compiler struct {
 	asm    *strings.Builder
 	scope  *Scope
+	funcs  map[string]*ast.FuncDec
 	labels int
 }
 
 func New() *Compiler {
 	return &Compiler{
-		asm: &strings.Builder{},
+		asm:   &strings.Builder{},
+		funcs: make(map[string]*ast.FuncDec),
 	}
 }
 
@@ -479,7 +481,34 @@ func (c *Compiler) block(b *ast.Block) error {
 	return nil
 }
 
+func (c *Compiler) addFuncDec(f *ast.FuncDec) error {
+	prev, ok := c.funcs[f.Name]
+	if ok {
+		if prev.Body != nil && f.Body != nil {
+			return fmt.Errorf("duplicate function definition: %s", f.Name)
+		}
+		if prev.Body == nil && f.Body == nil {
+			return fmt.Errorf("duplicate function prototype: %s", f.Name)
+		}
+		if len(prev.Params) != len(f.Params) {
+			return fmt.Errorf("definition doesn't match prototype: %s", f.Name)
+		}
+		if f.Body == nil {
+			return nil
+		}
+	}
+	c.funcs[f.Name] = f
+	return nil
+}
+
 func (c *Compiler) funcDec(f *ast.FuncDec) error {
+	if err := c.addFuncDec(f); err != nil {
+		return err
+	}
+	if f.Body == nil {
+		return nil
+	}
+
 	c.preable(f.Name)
 	if err := c.block(f.Body); err != nil {
 		return err
