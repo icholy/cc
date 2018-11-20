@@ -22,132 +22,132 @@ func TestOutput(t *testing.T) {
 	}{
 		{
 			Name:     "return_2",
-			SrcPath:  "testdata/stage_1/valid/return_2.c",
+			SrcPath:  "../testdata/stage_1/valid/return_2.c",
 			ExitCode: 2,
 		},
 		{
 			Name:     "bitwise",
-			SrcPath:  "testdata/stage_2/valid/bitwise.c",
+			SrcPath:  "../testdata/stage_2/valid/bitwise.c",
 			ExitCode: 0,
 		},
 		{
 			Name:     "precedence",
-			SrcPath:  "testdata/stage_3/valid/precedence.c",
+			SrcPath:  "../testdata/stage_3/valid/precedence.c",
 			ExitCode: 14,
 		},
 		{
 			Name:     "mod",
-			SrcPath:  "testdata/stage_3/valid/mod.c",
+			SrcPath:  "../testdata/stage_3/valid/mod.c",
 			ExitCode: 4,
 		},
 		{
 			Name:     "sub",
-			SrcPath:  "testdata/stage_3/valid/sub.c",
+			SrcPath:  "../testdata/stage_3/valid/sub.c",
 			ExitCode: 4,
 		},
 		{
 			Name:     "or_true",
-			SrcPath:  "testdata/stage_4/valid/or_true.c",
+			SrcPath:  "../testdata/stage_4/valid/or_true.c",
 			ExitCode: 1,
 		},
 		{
 			Name:     "multiple_vars",
-			SrcPath:  "testdata/stage_5/valid/multiple_vars.c",
+			SrcPath:  "../testdata/stage_5/valid/multiple_vars.c",
 			ExitCode: 3,
 		},
 		{
 			Name:     "exp_return_val",
-			SrcPath:  "testdata/stage_5/valid/exp_return_val.c",
+			SrcPath:  "../testdata/stage_5/valid/exp_return_val.c",
 			ExitCode: 0,
 		},
 		{
 			Name:     "if_nested_2",
-			SrcPath:  "testdata/stage_6/valid/if_nested_2.c",
+			SrcPath:  "../testdata/stage_6/valid/if_nested_2.c",
 			ExitCode: 2,
 		},
 		{
 			Name:     "if_nested_3",
-			SrcPath:  "testdata/stage_6/valid/if_nested_3.c",
+			SrcPath:  "../testdata/stage_6/valid/if_nested_3.c",
 			ExitCode: 3,
 		},
 		{
 			Name:     "if_nested_4",
-			SrcPath:  "testdata/stage_6/valid/if_nested_4.c",
+			SrcPath:  "../testdata/stage_6/valid/if_nested_4.c",
 			ExitCode: 4,
 		},
 		{
 			Name:     "consecutive_blocks.c",
-			SrcPath:  "testdata/stage_7/valid/consecutive_blocks.c",
+			SrcPath:  "../testdata/stage_7/valid/consecutive_blocks.c",
 			ExitCode: 1,
 		},
 		{
 			Name:     "consecutive_declarations.c",
-			SrcPath:  "testdata/stage_7/valid/consecutive_declarations.c",
+			SrcPath:  "../testdata/stage_7/valid/consecutive_declarations.c",
 			ExitCode: 3,
 		},
 		{
 			Name:     "multi_nesting.c",
-			SrcPath:  "testdata/stage_7/valid/multi_nesting.c",
+			SrcPath:  "../testdata/stage_7/valid/multi_nesting.c",
 			ExitCode: 3,
 		},
 		{
 			Name:     "nested_scope.c",
-			SrcPath:  "testdata/stage_7/valid/nested_scope.c",
+			SrcPath:  "../testdata/stage_7/valid/nested_scope.c",
 			ExitCode: 4,
 		},
 		{
 			Name:     "while_single_statement.c",
-			SrcPath:  "testdata/stage_8/valid/while_single_statement.c",
+			SrcPath:  "../testdata/stage_8/valid/while_single_statement.c",
 			ExitCode: 6,
 		},
 		{
 			Name:     "while_multi_statement.c",
-			SrcPath:  "testdata/stage_8/valid/while_multi_statement.c",
+			SrcPath:  "../testdata/stage_8/valid/while_multi_statement.c",
 			ExitCode: 6,
 		},
 		{
 			Name:     "do_while.c",
-			SrcPath:  "testdata/stage_8/valid/do_while.c",
+			SrcPath:  "../testdata/stage_8/valid/do_while.c",
 			ExitCode: 16,
 		},
 		{
 			Name:     "for_simple.c",
-			SrcPath:  "testdata/stage_8/valid/for_simple.c",
+			SrcPath:  "../testdata/stage_8/valid/for_simple.c",
 			ExitCode: 100,
 		},
 		{
 			Name:     "for_variable_shadow.c",
-			SrcPath:  "testdata/stage_8/valid/for_variable_shadow.c",
+			SrcPath:  "../testdata/stage_8/valid/for_variable_shadow.c",
 			ExitCode: 65,
 		},
 		{
 			Name:     "fib.c",
-			SrcPath:  "testdata/stage_8/valid/fib.c",
+			SrcPath:  "../testdata/stage_8/valid/fib.c",
 			ExitCode: 6765,
 		},
 		{
 			Name:     "no_arg.c",
-			SrcPath:  "testdata/stage_9/valid/no_arg.c",
+			SrcPath:  "../testdata/stage_9/valid/no_arg.c",
 			ExitCode: 3,
 		},
 		{
 			Name:     "multi_arg.c",
-			SrcPath:  "testdata/stage_9/valid/multi_arg.c",
+			SrcPath:  "../testdata/stage_9/valid/multi_arg.c",
 			ExitCode: 4,
 		},
 		{
 			Name:     "identity.c",
-			SrcPath:  "testdata/stage_9/valid/identity.c",
+			SrcPath:  "../testdata/stage_9/valid/identity.c",
 			ExitCode: 1,
 		},
 		{
 			Name:     "fib_func.c",
-			SrcPath:  "testdata/stage_9/valid/fib.c",
+			SrcPath:  "../testdata/stage_9/valid/fib.c",
 			ExitCode: 5,
 		},
 		{
 			Name:     "mutual_recursion.c",
-			SrcPath:  "testdata/stage_9/valid/mutual_recursion.c",
+			SrcPath:  "../testdata/stage_9/valid/mutual_recursion.c",
 			ExitCode: 12,
 		},
 	}
@@ -177,7 +177,7 @@ func TestStages(t *testing.T) {
 
 func AssertValid(t *testing.T, stage int) {
 	t.Run(fmt.Sprintf("stage_%d", stage), func(t *testing.T) {
-		pattern := fmt.Sprintf("testdata/stage_%d/valid/*.c", stage)
+		pattern := fmt.Sprintf("../testdata/stage_%d/valid/*.c", stage)
 		valid, err := filepath.Glob(pattern)
 		assert.NilError(t, err)
 		for _, srcpath := range valid {
