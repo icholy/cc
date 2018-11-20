@@ -41,6 +41,11 @@ func TestOutput(t *testing.T) {
 			ExitCode: 4,
 		},
 		{
+			Name:     "sub",
+			SrcPath:  "testdata/stage_3/valid/sub.c",
+			ExitCode: 4,
+		},
+		{
 			Name:     "or_true",
 			SrcPath:  "testdata/stage_4/valid/or_true.c",
 			ExitCode: 1,
@@ -133,7 +138,12 @@ func TestOutput(t *testing.T) {
 		{
 			Name:     "identity.c",
 			SrcPath:  "testdata/stage_9/valid/identity.c",
-			ExitCode: 4,
+			ExitCode: 1,
+		},
+		{
+			Name:     "fib_func.c",
+			SrcPath:  "testdata/stage_9/valid/fib.c",
+			ExitCode: 5,
 		},
 	}
 	for _, tt := range tests {

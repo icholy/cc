@@ -423,9 +423,10 @@ func (c *Compiler) binaryOp(binary *ast.BinaryOp) error {
 	c.emitf("pop %%ecx")
 	switch binary.Op {
 	case "+":
-		c.emitf("add %%ecx, %%eax")
+		c.emitf("addl %%ecx, %%eax")
 	case "-":
-		c.emitf("sub %%ecx, %%eax")
+		c.emitf("xchg %%eax, %%ecx")
+		c.emitf("subl %%ecx, %%eax")
 	case "*":
 		c.emitf("imul %%ecx, %%eax")
 	case "/":
