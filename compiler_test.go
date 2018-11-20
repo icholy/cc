@@ -145,6 +145,11 @@ func TestOutput(t *testing.T) {
 			SrcPath:  "testdata/stage_9/valid/fib.c",
 			ExitCode: 5,
 		},
+		{
+			Name:     "mutual_recursion.c",
+			SrcPath:  "testdata/stage_9/valid/mutual_recursion.c",
+			ExitCode: 12,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
